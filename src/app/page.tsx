@@ -451,12 +451,14 @@ interface CoverSettings {
 export default function FlyerPage() {
   // ── Data State ──
   const [products, setProducts] = useState<Product[]>([]);
+  const [noSellProducts, setNoSellProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('전체');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
+  const [showNoSell, setShowNoSell] = useState(false);
 
   // ── Flyer Settings ──
   const [template, setTemplate] = useState<Template>('A');
@@ -498,9 +500,9 @@ export default function FlyerPage() {
     (async () => {
       setLoading(true);
       const data = await fetchProducts();
-      const withSell = data.filter(p => p.sell > 0);
-      setProducts(withSell);
-      setCategories(getMajorCategories(withSell));
+      setProducts(data.filter(p => p.sell > 0));
+      setNoSellProducts(data.filter(p => !p.sell || p.sell <= 0));
+      setCategories(getMajorCategories(data.filter(p => p.sell > 0)));
       setLoading(false);
     })();
   }, []);
@@ -613,10 +615,9 @@ export default function FlyerPage() {
             <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '10px' }}>
               품목 현황
             </h3>
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               {[
-                { num: products.length, label: '전체 품목', color: 'var(--accent)' },
-                { num: categories.length, label: '카테고리', color: 'var(--accent)' },
+                { num: products.length, label: '판매단가 설정', color: 'var(--accent)' },
                 { num: selected.size, label: '선택됨', color: 'var(--accent2)' },
               ].map((s, i) => (
                 <div key={i} style={{ flex: 1, background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px', textAlign: 'center' }}>
@@ -625,6 +626,43 @@ export default function FlyerPage() {
                 </div>
               ))}
             </div>
+            {/* 판매단가 미설정 알림 */}
+            {noSellProducts.length > 0 && (
+              <div style={{ marginTop: '8px' }}>
+                <div
+                  onClick={() => setShowNoSell(!showNoSell)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '7px 10px', background: '#fff3e0', border: '1px solid #ffe0b2',
+                    borderRadius: showNoSell ? '6px 6px 0 0' : '6px', cursor: 'pointer', userSelect: 'none',
+                  }}
+                >
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#e65100' }}>
+                    판매단가 미설정 {noSellProducts.length}건
+                  </span>
+                  <span style={{ fontSize: '10px', color: '#bf360c' }}>{showNoSell ? '접기' : '펼치기'}</span>
+                </div>
+                {showNoSell && (
+                  <div style={{
+                    maxHeight: '160px', overflowY: 'auto',
+                    border: '1px solid #ffe0b2', borderTop: 'none',
+                    borderRadius: '0 0 6px 6px', background: '#fff8f0',
+                  }}>
+                    {noSellProducts.map(p => (
+                      <div key={p.code} style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '5px 10px', borderBottom: '1px solid #fff3e0',
+                        fontSize: '11px',
+                      }}>
+                        <span style={{ color: '#bf360c', fontWeight: 600, width: '70px', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.code}</span>
+                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#555' }}>{p.name}</span>
+                        <span style={{ color: '#999', flexShrink: 0, fontSize: '10px' }}>{p.spec}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Search & Filter */}
