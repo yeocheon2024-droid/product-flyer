@@ -20,7 +20,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'Pretendard', 'sans-serif'],
+        sans: ['Noto Sans KR', 'Inter', 'Pretendard', 'sans-serif'],
       },
     },
   },
