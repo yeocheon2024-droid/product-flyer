@@ -487,6 +487,140 @@ body {
 .cover-info-box .cib-title { font-size: 10px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
 .cover-info-box .cib-content { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
 
+/* ═══ TEMPLATE I: 마트형 (Supermarket Sale) ═══ */
+.grid-i {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--card-gap, 10px);
+  height: 100%;
+  align-content: start;
+}
+.card-i {
+  border: 2px solid #ffe082;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fffde7;
+  position: relative;
+}
+.card-i .i-badge {
+  position: absolute; top: 6px; left: 6px; z-index: 2;
+  background: #f44336; color: #fff;
+  font-size: 10px; font-weight: 900;
+  padding: 2px 8px; border-radius: 4px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.card-i .i-img {
+  width: 100%; height: var(--card-img-h, 140px);
+  object-fit: cover; display: block;
+}
+.card-i .i-body { padding: var(--card-pad, 8px 10px 10px); }
+.card-i .i-name {
+  font-size: var(--card-name-fs, 14px); font-weight: 800;
+  color: #333; margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-i .i-spec { font-size: 10px; color: #999; margin-bottom: 6px; }
+.card-i .i-price-wrap { display: flex; align-items: center; gap: 4px; }
+.card-i .i-price {
+  display: inline-flex; align-items: baseline; gap: 1px;
+  background: linear-gradient(135deg, #ff6f00, #f44336);
+  color: #fff; padding: 4px 10px; border-radius: 6px;
+  font-size: var(--card-price-fs, 22px); font-weight: 900; line-height: 1;
+  box-shadow: 0 2px 6px rgba(244,67,54,0.3);
+}
+.card-i .i-price span { font-size: calc(var(--card-price-fs, 22px) * 0.55); font-weight: 700; opacity: 0.9; }
+
+/* ═══ TEMPLATE J: 미니멀형 (Minimal Clean) ═══ */
+.grid-j {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--card-gap, 16px);
+  height: 100%;
+  align-content: start;
+}
+.card-j {
+  border: none;
+  overflow: hidden;
+  background: transparent;
+}
+.card-j .j-img {
+  width: 100%; height: var(--card-img-h, 140px);
+  object-fit: cover; display: block;
+  border-radius: 12px;
+}
+.card-j .j-body { padding: 10px 2px 0; }
+.card-j .j-name {
+  font-size: var(--card-name-fs, 12px); font-weight: 600;
+  color: #333; letter-spacing: -0.3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-j .j-spec { font-size: 10px; color: #bbb; margin-top: 2px; }
+.card-j .j-price {
+  font-size: var(--card-price-fs, 14px); font-weight: 300;
+  color: #333; margin-top: 6px; letter-spacing: -0.5px;
+}
+
+/* ═══ TEMPLATE K: 매거진형 (Magazine Mixed) ═══ */
+.grid-k {
+  display: flex; flex-direction: column;
+  gap: var(--card-gap, 10px);
+}
+.k-group { display: flex; flex-direction: column; gap: 8px; }
+.k-hero {
+  position: relative; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.k-hero-img { width: 100%; height: 200px; object-fit: cover; display: block; }
+.k-hero-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+  padding: 30px 18px 14px; color: #fff;
+}
+.k-hero-name { font-size: var(--card-name-fs, 18px); font-weight: 900; margin-bottom: 2px; }
+.k-hero-spec { font-size: 11px; opacity: 0.7; }
+.k-hero-price { font-size: var(--card-price-fs, 24px); font-weight: 900; margin-top: 6px; color: #ffd54f; }
+.k-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.k-small {
+  border: 1px solid #e8e4de; border-radius: 8px; overflow: hidden; background: #fafaf8;
+}
+.k-small-img { width: 100%; height: 80px; object-fit: cover; display: block; }
+.k-small-body { padding: 6px 8px; }
+.k-small-name { font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-small-price { font-size: 11px; font-weight: 900; color: var(--accent2); margin-top: 2px; }
+
+/* ═══ TEMPLATE L: 테이블형 (Clean Table) ═══ */
+.grid-l { display: flex; flex-direction: column; gap: 14px; }
+.l-section { }
+.l-cat-header {
+  background: var(--accent); color: #fff;
+  font-size: 11px; font-weight: 800;
+  padding: 5px 14px; border-radius: 4px 4px 0 0;
+  letter-spacing: 0.5px;
+}
+.l-table { border: 1px solid #e0dcd5; border-top: none; border-radius: 0 0 4px 4px; overflow: hidden; }
+.l-row {
+  display: flex; align-items: center;
+  padding: var(--card-pad, 8px 14px);
+  border-bottom: 1px solid #ede9e3;
+  gap: 8px;
+}
+.l-row:last-child { border-bottom: none; }
+.l-row-head {
+  background: #f5f2ed; font-weight: 800; font-size: 10px;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 6px 14px;
+}
+.l-row-even { background: #fafaf8; }
+.l-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.l-cell-no { width: 30px; flex-shrink: 0; font-size: 10px; font-weight: 700; color: var(--muted); text-align: center; }
+.l-cell-name { flex: 1; font-size: var(--card-name-fs, 12px); font-weight: 600; min-width: 0; }
+.l-cell-spec { width: 100px; flex-shrink: 0; font-size: 10px; color: var(--muted); }
+.l-cell-price { width: 90px; flex-shrink: 0; text-align: right; font-size: var(--card-price-fs, 13px); }
+.l-price-val { font-weight: 900; color: var(--accent2); }
+
 /* ── Toast ── */
 .toast {
   position: fixed; bottom: 20px; left: 50%;

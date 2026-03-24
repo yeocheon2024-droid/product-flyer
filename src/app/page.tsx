@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { fetchProducts, getImageUrl, formatPrice, getMajorCategories, Product } from '@/lib/supabase';
 
 // ── Types ──
-type Template = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'COVER';
+type Template = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'COVER';
 type Theme = 'green' | 'navy' | 'earth' | 'dark' | 'red' | 'purple' | 'teal';
 
 const THEMES: { id: Theme; color: string; label: string }[] = [
@@ -60,6 +60,22 @@ function getScaleVars(count: number, tmpl: Template): React.CSSProperties {
     if (count <= 9) { vars['--card-img-h'] = '110px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '8px'; }
     else if (count <= 15) { vars['--card-img-h'] = '75px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '6px'; vars['--card-pad'] = '5px 7px 7px'; }
     else { vars['--card-img-h'] = '55px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '10px'; vars['--card-gap'] = '4px'; vars['--card-pad'] = '4px 5px 5px'; }
+  } else if (tmpl === 'I') {
+    if (count <= 6) { vars['--card-img-h'] = '140px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '22px'; vars['--card-gap'] = '10px'; }
+    else if (count <= 12) { vars['--card-img-h'] = '100px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '8px'; }
+    else { vars['--card-img-h'] = '75px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '6px'; vars['--card-pad'] = '6px 8px'; }
+  } else if (tmpl === 'J') {
+    if (count <= 9) { vars['--card-img-h'] = '140px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '16px'; }
+    else if (count <= 15) { vars['--card-img-h'] = '100px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '12px'; }
+    else { vars['--card-img-h'] = '70px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '8px'; }
+  } else if (tmpl === 'K') {
+    vars['--card-gap'] = '10px';
+    if (count <= 5) { vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '18px'; }
+    else { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '8px'; }
+  } else if (tmpl === 'L') {
+    if (count <= 10) { vars['--card-name-fs'] = '13px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '0px'; vars['--card-pad'] = '10px 14px'; }
+    else if (count <= 20) { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '0px'; vars['--card-pad'] = '8px 14px'; }
+    else { vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '0px'; vars['--card-pad'] = '6px 14px'; }
   }
   return vars as React.CSSProperties;
 }
@@ -251,6 +267,120 @@ function RenderTemplateH({ products, showPrice }: { products: Product[]; showPri
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ═══ TEMPLATE I: 마트형 (Supermarket Sale) ═══
+function RenderTemplateI({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
+  return (
+    <div className="grid-i" style={getScaleVars(products.length, 'I')}>
+      {products.map((p, i) => (
+        <div key={i} className="card-i">
+          <div className="i-badge">SALE</div>
+          <ProductImg product={p} className="i-img" style={{ width: '100%', height: 'var(--card-img-h, 140px)', objectFit: 'cover' }} />
+          <div className="i-body">
+            <div className="i-name">{p.name}</div>
+            {p.spec && <div className="i-spec">{p.spec}</div>}
+            {showPrice && (
+              <div className="i-price-wrap">
+                <div className="i-price">{formatPrice(p.sell).replace('원', '')}<span>원</span></div>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ═══ TEMPLATE J: 미니멀형 (Minimal Clean) ═══
+function RenderTemplateJ({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
+  return (
+    <div className="grid-j" style={getScaleVars(products.length, 'J')}>
+      {products.map((p, i) => (
+        <div key={i} className="card-j">
+          <ProductImg product={p} className="j-img" style={{ width: '100%', height: 'var(--card-img-h, 140px)', objectFit: 'cover' }} />
+          <div className="j-body">
+            <div className="j-name">{p.name}</div>
+            {p.spec && <div className="j-spec">{p.spec}</div>}
+            {showPrice && <div className="j-price">{formatPrice(p.sell)}</div>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ═══ TEMPLATE K: 매거진형 (Magazine Mixed) ═══
+function RenderTemplateK({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
+  // 1번째: 대형, 2~5번째: 소형 4열, 반복
+  const chunks: Product[][] = [];
+  for (let i = 0; i < products.length; i += 5) {
+    chunks.push(products.slice(i, i + 5));
+  }
+  return (
+    <div className="grid-k" style={getScaleVars(products.length, 'K')}>
+      {chunks.map((chunk, ci) => (
+        <div key={ci} className="k-group">
+          {/* Hero card */}
+          {chunk[0] && (
+            <div className="k-hero">
+              <ProductImg product={chunk[0]} className="k-hero-img" style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
+              <div className="k-hero-overlay">
+                <div className="k-hero-name">{chunk[0].name}</div>
+                {chunk[0].spec && <div className="k-hero-spec">{chunk[0].spec}</div>}
+                {showPrice && <div className="k-hero-price">{formatPrice(chunk[0].sell)}</div>}
+              </div>
+            </div>
+          )}
+          {/* Small cards row */}
+          {chunk.length > 1 && (
+            <div className="k-row">
+              {chunk.slice(1).map((p, i) => (
+                <div key={i} className="k-small">
+                  <ProductImg product={p} className="k-small-img" style={{ width: '100%', height: '80px', objectFit: 'cover' }} />
+                  <div className="k-small-body">
+                    <div className="k-small-name">{p.name}</div>
+                    {showPrice && <div className="k-small-price">{formatPrice(p.sell)}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ═══ TEMPLATE L: 테이블형 (Clean Table) ═══
+function RenderTemplateL({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
+  const groups = groupByCategory(products);
+  return (
+    <div className="grid-l" style={getScaleVars(products.length, 'L')}>
+      {Object.entries(groups).map(([cat, items]) => (
+        <div key={cat} className="l-section">
+          <div className="l-cat-header">{cat}</div>
+          <div className="l-table">
+            {/* Table header */}
+            <div className="l-row l-row-head">
+              <div className="l-cell l-cell-no">No.</div>
+              <div className="l-cell l-cell-name">품목명</div>
+              <div className="l-cell l-cell-spec">규격</div>
+              {showPrice && <div className="l-cell l-cell-price">단가</div>}
+            </div>
+            {items.map((p, i) => (
+              <div key={p.code} className={`l-row ${i % 2 === 0 ? 'l-row-even' : ''}`}>
+                <div className="l-cell l-cell-no">{i + 1}</div>
+                <div className="l-cell l-cell-name">{p.name}</div>
+                <div className="l-cell l-cell-spec">{p.spec || '-'}</div>
+                {showPrice && <div className="l-cell l-cell-price l-price-val">{formatPrice(p.sell)}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -611,31 +741,57 @@ export default function FlyerPage() {
             )}
           </div>
 
-          {/* Templates */}
+          {/* Templates - Compact Grid */}
           <div>
             <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '8px' }}>📐 템플릿</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
               {([
-                { id: 'A' as Template, name: '템플릿 A', desc: '이미지 강조형 · 2열' },
-                { id: 'B' as Template, name: '템플릿 B', desc: '가격표형 · 리스트' },
-                { id: 'C' as Template, name: '템플릿 C', desc: '균형형 그리드 · 3열' },
-                { id: 'D' as Template, name: '템플릿 D', desc: '좌우분할형 · 이미지+정보' },
-                { id: 'E' as Template, name: '템플릿 E', desc: '카탈로그형 · 2단 목록' },
-                { id: 'F' as Template, name: '템플릿 F', desc: '프리미엄카드형 · 4열' },
-                { id: 'G' as Template, name: '템플릿 G', desc: '신문형 · 카테고리 구분' },
-                { id: 'H' as Template, name: '템플릿 H', desc: '컬러블록형 · 카테고리색상' },
-                { id: 'COVER' as Template, name: '⭐ 표지', desc: '미끼상품 3종 · 회사소개' },
+                { id: 'A' as Template, icon: '🖼', label: '이미지2열' },
+                { id: 'B' as Template, icon: '📋', label: '가격표' },
+                { id: 'C' as Template, icon: '⊞', label: '3열그리드' },
+                { id: 'D' as Template, icon: '◧', label: '좌우분할' },
+                { id: 'E' as Template, icon: '☰', label: '카탈로그' },
+                { id: 'F' as Template, icon: '◈', label: '프리미엄' },
+                { id: 'G' as Template, icon: '📰', label: '신문형' },
+                { id: 'H' as Template, icon: '🎨', label: '컬러블록' },
+                { id: 'I' as Template, icon: '🏷', label: '마트형' },
+                { id: 'J' as Template, icon: '✦', label: '미니멀' },
+                { id: 'K' as Template, icon: '📖', label: '매거진' },
+                { id: 'L' as Template, icon: '📊', label: '테이블' },
               ]).map(t => (
                 <div
                   key={t.id}
-                  className={`template-card ${template === t.id ? 'active' : ''}`}
-                  style={t.id === 'COVER' ? { borderColor: template === 'COVER' ? 'var(--accent)' : 'var(--accent2)' } : {}}
                   onClick={() => { setTemplate(t.id); setGenerated(false); }}
+                  style={{
+                    padding: '6px 4px',
+                    borderRadius: '6px',
+                    border: template === t.id ? '2px solid var(--accent)' : '1px solid var(--border)',
+                    background: template === t.id ? '#f0f7f0' : 'var(--panel)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    transition: 'all 0.15s',
+                  }}
                 >
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: t.id === 'COVER' ? 'var(--accent2)' : undefined }}>{t.name}</div>
-                  <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '1px' }}>{t.desc}</div>
+                  <div style={{ fontSize: '16px', lineHeight: 1 }}>{t.icon}</div>
+                  <div style={{ fontSize: '9px', fontWeight: 700, marginTop: '2px', color: template === t.id ? 'var(--accent)' : 'var(--text)', lineHeight: 1.2 }}>{t.label}</div>
                 </div>
               ))}
+            </div>
+            {/* COVER - full width */}
+            <div
+              onClick={() => { setTemplate('COVER'); setGenerated(false); }}
+              style={{
+                marginTop: '4px',
+                padding: '8px',
+                borderRadius: '6px',
+                border: template === 'COVER' ? '2px solid var(--accent)' : '2px solid var(--accent2)',
+                background: template === 'COVER' ? '#f0f7f0' : 'var(--panel)',
+                cursor: 'pointer',
+                textAlign: 'center',
+                transition: 'all 0.15s',
+              }}
+            >
+              <div style={{ fontSize: '12px', fontWeight: 900, color: template === 'COVER' ? 'var(--accent)' : 'var(--accent2)' }}>⭐ 표지 (미끼상품 3종)</div>
             </div>
           </div>
 
@@ -791,6 +947,10 @@ export default function FlyerPage() {
                         {template === 'F' && <RenderTemplateF products={selectedProducts} showPrice={showPrice} />}
                         {template === 'G' && <RenderTemplateG products={selectedProducts} showPrice={showPrice} />}
                         {template === 'H' && <RenderTemplateH products={selectedProducts} showPrice={showPrice} />}
+                        {template === 'I' && <RenderTemplateI products={selectedProducts} showPrice={showPrice} />}
+                        {template === 'J' && <RenderTemplateJ products={selectedProducts} showPrice={showPrice} />}
+                        {template === 'K' && <RenderTemplateK products={selectedProducts} showPrice={showPrice} />}
+                        {template === 'L' && <RenderTemplateL products={selectedProducts} showPrice={showPrice} />}
                       </>
                     )}
                   </div>
