@@ -94,7 +94,7 @@ function groupByCategory(products: Product[]): Record<string, Product[]> {
 function ProductImg({ product, className, style }: { product: Product; className?: string; style?: React.CSSProperties }) {
   const [err, setErr] = useState(false);
   const url = getImageUrl(product);
-  if (!url || err) return <div className={className} style={style}>📦</div>;
+  if (!url || err) return <div className={className} style={{ ...style, color: '#ccc', fontSize: '11px', fontWeight: 600, letterSpacing: '-0.3px' }}>No img</div>;
   return <img src={url} alt={product.name} crossOrigin="anonymous" onError={() => setErr(true)} className={className} style={style} />;
 }
 
@@ -591,14 +591,13 @@ export default function FlyerPage() {
         height: '52px', background: 'var(--accent)', display: 'flex', alignItems: 'center',
         padding: '0 20px', gap: '16px', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
       }} className={`theme-${theme}`}>
-        <span style={{ fontSize: '20px' }}>🌾</span>
-        <h1 style={{ color: '#fff', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px' }}>전단지 자동생성기</h1>
-        <span style={{ background: 'var(--accent2)', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '20px' }}>Supabase 연동</span>
+        <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px' }}>전단지 생성기</h1>
+        <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
         <div style={{ flex: 1 }} />
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-print" onClick={doPrint}>🖨 인쇄</button>
-          <button className="btn btn-white" onClick={exportPNG}>🖼 PNG</button>
-          <button className="btn-orange btn" onClick={exportPDF}>📄 PDF</button>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <button className="btn btn-print" onClick={doPrint}>인쇄</button>
+          <button className="btn btn-white" onClick={exportPNG}>PNG</button>
+          <button className="btn-orange btn" onClick={exportPDF}>PDF 저장</button>
         </div>
       </header>
 
@@ -612,7 +611,7 @@ export default function FlyerPage() {
           {/* Stats */}
           <div style={{ borderBottom: '1px solid var(--border)', padding: '14px 16px' }}>
             <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '10px' }}>
-              📊 Supabase 품목
+              품목 현황
             </h3>
             <div style={{ display: 'flex', gap: '12px' }}>
               {[
@@ -631,7 +630,7 @@ export default function FlyerPage() {
           {/* Search & Filter */}
           <div style={{ borderBottom: '1px solid var(--border)', padding: '14px 16px' }}>
             <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '10px' }}>
-              🔍 검색 · 필터
+              검색 / 필터
             </h3>
             <input
               type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -667,7 +666,7 @@ export default function FlyerPage() {
               <span style={{ fontSize: '12px', fontWeight: 700 }}>가격 표시</span>
               <span style={{ fontSize: '10px', color: 'var(--muted)' }}>해제 = 품목표</span>
             </label>
-            <span style={{ fontSize: '10px', color: 'var(--muted)' }}>✏ 클릭 = 품목명 수정</span>
+            <span style={{ fontSize: '10px', color: 'var(--muted)' }}>클릭시 품목명 수정</span>
           </div>
 
           {/* Product List */}
@@ -675,12 +674,11 @@ export default function FlyerPage() {
             {loading ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px', color: 'var(--muted)' }}>
                 <div className="spinner" />
-                <p style={{ fontSize: '13px' }}>Supabase에서 품목 불러오는 중...</p>
+                <p style={{ fontSize: '13px' }}>품목 불러오는 중...</p>
               </div>
             ) : filtered.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)' }}>
-                <div style={{ fontSize: '48px', marginBottom: '8px' }}>🔍</div>
-                <p style={{ fontSize: '13px' }}>검색 결과가 없습니다.</p>
+                <p style={{ fontSize: '13px' }}>검색 결과 없음</p>
               </div>
             ) : (
               filtered.map(p => {
@@ -698,7 +696,7 @@ export default function FlyerPage() {
                       <img src={imgUrl} alt="" style={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover', background: '#eee', flexShrink: 0, border: '1px solid var(--border)' }}
                         onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
-                      <div style={{ width: '36px', height: '36px', borderRadius: '4px', background: '#e8e4de', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0, border: '1px solid var(--border)' }}>📦</div>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '4px', background: '#e8e4de', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: '#aaa', fontWeight: 600, flexShrink: 0, border: '1px solid var(--border)' }}>IMG</div>
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
@@ -743,37 +741,37 @@ export default function FlyerPage() {
 
           {/* Templates - Compact Grid */}
           <div>
-            <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '8px' }}>📐 템플릿</h3>
+            <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '8px' }}>레이아웃</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
               {([
-                { id: 'A' as Template, icon: '🖼', label: '이미지2열' },
-                { id: 'B' as Template, icon: '📋', label: '가격표' },
-                { id: 'C' as Template, icon: '⊞', label: '3열그리드' },
-                { id: 'D' as Template, icon: '◧', label: '좌우분할' },
-                { id: 'E' as Template, icon: '☰', label: '카탈로그' },
-                { id: 'F' as Template, icon: '◈', label: '프리미엄' },
-                { id: 'G' as Template, icon: '📰', label: '신문형' },
-                { id: 'H' as Template, icon: '🎨', label: '컬러블록' },
-                { id: 'I' as Template, icon: '🏷', label: '마트형' },
-                { id: 'J' as Template, icon: '✦', label: '미니멀' },
-                { id: 'K' as Template, icon: '📖', label: '매거진' },
-                { id: 'L' as Template, icon: '📊', label: '테이블' },
+                { id: 'A' as Template, label: '이미지2열' },
+                { id: 'B' as Template, label: '가격표' },
+                { id: 'C' as Template, label: '3열그리드' },
+                { id: 'D' as Template, label: '좌우분할' },
+                { id: 'E' as Template, label: '카탈로그' },
+                { id: 'F' as Template, label: '프리미엄' },
+                { id: 'G' as Template, label: '신문형' },
+                { id: 'H' as Template, label: '컬러블록' },
+                { id: 'I' as Template, label: '마트형' },
+                { id: 'J' as Template, label: '미니멀' },
+                { id: 'K' as Template, label: '매거진' },
+                { id: 'L' as Template, label: '테이블' },
               ]).map(t => (
                 <div
                   key={t.id}
                   onClick={() => { setTemplate(t.id); setGenerated(false); }}
                   style={{
-                    padding: '6px 4px',
-                    borderRadius: '6px',
+                    padding: '7px 4px 5px',
+                    borderRadius: '4px',
                     border: template === t.id ? '2px solid var(--accent)' : '1px solid var(--border)',
                     background: template === t.id ? '#f0f7f0' : 'var(--panel)',
                     cursor: 'pointer',
                     textAlign: 'center',
-                    transition: 'all 0.15s',
+                    transition: 'all 0.12s',
                   }}
                 >
-                  <div style={{ fontSize: '16px', lineHeight: 1 }}>{t.icon}</div>
-                  <div style={{ fontSize: '9px', fontWeight: 700, marginTop: '2px', color: template === t.id ? 'var(--accent)' : 'var(--text)', lineHeight: 1.2 }}>{t.label}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: template === t.id ? 'var(--accent)' : '#555', letterSpacing: '-0.3px', lineHeight: 1 }}>{t.id}</div>
+                  <div style={{ fontSize: '8px', fontWeight: 600, marginTop: '3px', color: template === t.id ? 'var(--accent)' : 'var(--muted)', lineHeight: 1.1 }}>{t.label}</div>
                 </div>
               ))}
             </div>
@@ -782,22 +780,22 @@ export default function FlyerPage() {
               onClick={() => { setTemplate('COVER'); setGenerated(false); }}
               style={{
                 marginTop: '4px',
-                padding: '8px',
-                borderRadius: '6px',
-                border: template === 'COVER' ? '2px solid var(--accent)' : '2px solid var(--accent2)',
+                padding: '7px',
+                borderRadius: '4px',
+                border: template === 'COVER' ? '2px solid var(--accent)' : '1px solid var(--accent2)',
                 background: template === 'COVER' ? '#f0f7f0' : 'var(--panel)',
                 cursor: 'pointer',
                 textAlign: 'center',
-                transition: 'all 0.15s',
+                transition: 'all 0.12s',
               }}
             >
-              <div style={{ fontSize: '12px', fontWeight: 900, color: template === 'COVER' ? 'var(--accent)' : 'var(--accent2)' }}>⭐ 표지 (미끼상품 3종)</div>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: template === 'COVER' ? 'var(--accent)' : 'var(--accent2)' }}>표지 (미끼상품)</div>
             </div>
           </div>
 
           {/* Settings */}
           <div>
-            <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '8px' }}>⚙ 전단지 설정</h3>
+            <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '8px' }}>설정</h3>
 
             <OptionInput label="회사명" value={companyName} onChange={setCompanyName} />
             <OptionInput label="부제목" value={subtitle} onChange={setSubtitle} />
@@ -836,7 +834,7 @@ export default function FlyerPage() {
           {template === 'COVER' && (
             <div>
               <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '8px' }}>
-                ⭐ 표지 설정
+                표지 설정
               </h3>
               <OptionInput label="미끼상품 리본 문구" value={coverSettings.ribbon} onChange={v => setCoverSettings(s => ({ ...s, ribbon: v }))} />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '8px' }}>
@@ -875,7 +873,7 @@ export default function FlyerPage() {
             style={{ width: '100%', marginTop: 'auto', padding: '12px' }}
             onClick={generateFlyer}
           >
-            ✨ 전단지 생성
+            전단지 생성
           </button>
         </div>
 
@@ -886,7 +884,7 @@ export default function FlyerPage() {
             background: 'var(--panel)', borderBottom: '1px solid var(--border)',
             padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0,
           }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--muted)' }}>📋 미리보기</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--muted)' }}>미리보기</span>
             <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
               {generated ? `${selectedProducts.length}개 품목 · 템플릿 ${template}` : '품목을 선택하고 생성하세요'}
             </span>
@@ -934,8 +932,7 @@ export default function FlyerPage() {
                   <div className="flyer-body">
                     {!generated || selectedProducts.length === 0 ? (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '600px', gap: '12px', color: 'var(--muted)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '48px' }}>🌾</div>
-                        <p style={{ fontSize: '13px' }}>상품을 선택하고<br />&quot;전단지 생성&quot; 버튼을 누르세요</p>
+                        <p style={{ fontSize: '13px' }}>품목을 선택 후<br />좌측 하단의 &quot;전단지 생성&quot; 버튼을 누르세요.</p>
                       </div>
                     ) : (
                       <>
@@ -958,7 +955,7 @@ export default function FlyerPage() {
                   {/* Flyer Footer */}
                   <div className="flyer-footer">
                     <div className="f-note">{footerNote}</div>
-                    <div className="f-contact">📞 {contact}</div>
+                    <div className="f-contact">{contact}</div>
                   </div>
                 </>
               ) : (
@@ -977,8 +974,7 @@ export default function FlyerPage() {
                   {!generated || selectedProducts.length === 0 ? (
                     <div className="flyer-body">
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '600px', gap: '12px', color: 'var(--muted)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '48px' }}>⭐</div>
-                        <p style={{ fontSize: '13px' }}>표지 미끼상품 3개를 선택하고<br />&quot;전단지 생성&quot; 버튼을 누르세요</p>
+                        <p style={{ fontSize: '13px' }}>미끼상품 3개 이상 선택 후<br />&quot;전단지 생성&quot; 버튼을 누르세요.</p>
                       </div>
                     </div>
                   ) : (
@@ -986,7 +982,7 @@ export default function FlyerPage() {
                   )}
                   <div className="flyer-footer">
                     <div className="f-note">{footerNote}</div>
-                    <div className="f-contact">📞 {contact}</div>
+                    <div className="f-contact">{contact}</div>
                   </div>
                 </>
               )}
@@ -1003,7 +999,7 @@ export default function FlyerPage() {
         >
           <div style={{ background: '#fff', borderRadius: '12px', padding: '24px 28px', width: '360px', boxShadow: '0 8px 40px rgba(0,0,0,0.2)' }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: '14px', fontWeight: 800, marginBottom: '4px' }}>✏ 품목명 수정</div>
+            <div style={{ fontSize: '14px', fontWeight: 800, marginBottom: '4px' }}>품목명 수정</div>
             <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '14px' }}>원래 이름: {editModal.original}</div>
             <input
               value={editValue}
