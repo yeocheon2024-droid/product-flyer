@@ -558,10 +558,23 @@ export default function FlyerPage() {
     showToast('품목명이 수정되었습니다');
   }
 
+  // 템플릿별 권장 최대 품목 수 (A4 기준 가독성 유지)
+  const TEMPLATE_MAX: Record<Template, number> = {
+    A: 16, B: 20, C: 18, D: 12, E: 40, F: 16, G: 30, H: 18, I: 12, J: 15, K: 10, L: 20, COVER: 12
+  };
+
   function generateFlyer() {
     if (selected.size === 0) { showToast('품목을 선택해 주세요'); return; }
+    const max = TEMPLATE_MAX[template] || 20;
+    if (selectedProducts.length > max) {
+      if (!confirm(`현재 ${selectedProducts.length}개 품목이 선택되었습니다.\n\n이 템플릿의 A4 권장 수량은 ${max}개입니다.\n초과 시 글씨가 작아져 가독성이 떨어질 수 있습니다.\n\n그래도 생성하시겠습니까?`)) return;
+    }
     setGenerated(true);
-    showToast(`전단지 생성 완료! (${selectedProducts.length}개 품목)`);
+    if (selectedProducts.length > max) {
+      showToast(`⚠ ${selectedProducts.length}개 품목 생성됨 (권장 ${max}개 초과)`);
+    } else {
+      showToast(`전단지 생성 완료! (${selectedProducts.length}개 품목)`);
+    }
   }
 
   // ── Export ──
@@ -629,7 +642,7 @@ export default function FlyerPage() {
             <div style={{ display: 'flex', gap: '8px' }}>
               {[
                 { num: products.length, label: '판매단가 설정', color: 'var(--accent)' },
-                { num: selected.size, label: '선택됨', color: 'var(--accent2)' },
+                { num: selected.size, label: `선택됨 (권장 ${TEMPLATE_MAX[template]}개)`, color: selected.size > TEMPLATE_MAX[template] ? '#c0392b' : 'var(--accent2)' },
               ].map((s, i) => (
                 <div key={i} style={{ flex: 1, background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px', textAlign: 'center' }}>
                   <div style={{ fontSize: '20px', fontWeight: 900, color: s.color }}>{s.num}</div>
@@ -697,20 +710,23 @@ export default function FlyerPage() {
               ))}
             </div>
             {filteredMinors.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
-                <div
-                  className={`cat-tab ${activeMinor === '전체' ? 'active' : ''}`}
-                  style={{ fontSize: '10px', padding: '3px 8px' }}
-                  onClick={() => setActiveMinor('전체')}
-                >전체</div>
-                {filteredMinors.map(minor => (
+              <div style={{ marginTop: '4px', padding: '6px 8px', background: '#f5f0e8', borderRadius: '6px', border: '1px solid #e8e0d0' }}>
+                <div style={{ fontSize: '9px', fontWeight: 700, color: '#999', marginBottom: '4px', letterSpacing: '0.3px' }}>중분류</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
                   <div
-                    key={minor}
-                    className={`cat-tab ${activeMinor === minor ? 'active' : ''}`}
+                    className={`cat-tab ${activeMinor === '전체' ? 'active' : ''}`}
                     style={{ fontSize: '10px', padding: '3px 8px' }}
-                    onClick={() => setActiveMinor(minor)}
-                  >{minor}</div>
-                ))}
+                    onClick={() => setActiveMinor('전체')}
+                  >전체</div>
+                  {filteredMinors.map(minor => (
+                    <div
+                      key={minor}
+                      className={`cat-tab ${activeMinor === minor ? 'active' : ''}`}
+                      style={{ fontSize: '10px', padding: '3px 8px' }}
+                      onClick={() => setActiveMinor(minor)}
+                    >{minor}</div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
