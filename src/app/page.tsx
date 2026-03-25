@@ -117,7 +117,7 @@ function RenderTemplateA({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-a" style={getScaleVars(products.length, 'A')}>
       {products.map((p, i) => (
         <div key={i} className="card-a">
-          <ProductImg product={p} className="card-img" style={{ width: '100%', height: 'var(--card-img-h, 160px)', objectFit: 'cover' }} />
+          <ProductImg product={p} className="card-img" style={{ width: '100%', height: 'var(--card-img-h, 160px)', objectFit: 'contain', background: '#f5f2ed' }} />
           <div className="card-body">
             <div className="card-name">{p.name}</div>
             {p.spec && <div className="card-spec">{p.spec}</div>}
@@ -268,7 +268,7 @@ function RenderTemplateH({ products, showPrice }: { products: Product[]; showPri
         return (
           <div key={i} className="card-h" style={{ background: `${catColor}15` }}>
             <div className="h-cat-bar" style={{ background: catColor }}>{p.major_name || '기타'}</div>
-            <ProductImg product={p} className="h-img" style={{ width: '100%', height: 'var(--card-img-h, 100px)', objectFit: 'cover' }} />
+            <ProductImg product={p} className="h-img" style={{ width: '100%', height: 'var(--card-img-h, 100px)', objectFit: 'contain', background: 'rgba(0,0,0,0.04)' }} />
             <div className="h-body">
               <div className="h-name">{p.name}</div>
               {p.spec && <div className="h-spec">{p.spec}</div>}
@@ -288,7 +288,7 @@ function RenderTemplateI({ products, showPrice }: { products: Product[]; showPri
       {products.map((p, i) => (
         <div key={i} className="card-i">
           <div className="i-badge">SALE</div>
-          <ProductImg product={p} className="i-img" style={{ width: '100%', height: 'var(--card-img-h, 140px)', objectFit: 'cover' }} />
+          <ProductImg product={p} className="i-img" style={{ width: '100%', height: 'var(--card-img-h, 140px)', objectFit: 'contain', background: '#faf8f0' }} />
           <div className="i-body">
             <div className="i-name">{p.name}</div>
             {p.spec && <div className="i-spec">{p.spec}</div>}
@@ -310,7 +310,7 @@ function RenderTemplateJ({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-j" style={getScaleVars(products.length, 'J')}>
       {products.map((p, i) => (
         <div key={i} className="card-j">
-          <ProductImg product={p} className="j-img" style={{ width: '100%', height: 'var(--card-img-h, 140px)', objectFit: 'cover' }} />
+          <ProductImg product={p} className="j-img" style={{ width: '100%', height: 'var(--card-img-h, 140px)', objectFit: 'contain', background: '#f5f3ef' }} />
           <div className="j-body">
             <div className="j-name">{p.name}</div>
             {p.spec && <div className="j-spec">{p.spec}</div>}
@@ -336,7 +336,7 @@ function RenderTemplateK({ products, showPrice }: { products: Product[]; showPri
           {/* Hero card */}
           {chunk[0] && (
             <div className="k-hero">
-              <ProductImg product={chunk[0]} className="k-hero-img" style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
+              <ProductImg product={chunk[0]} className="k-hero-img" style={{ width: '100%', height: '200px', objectFit: 'contain', background: '#f5f2ed' }} />
               <div className="k-hero-overlay">
                 <div className="k-hero-name">{chunk[0].name}</div>
                 {chunk[0].spec && <div className="k-hero-spec">{chunk[0].spec}</div>}
@@ -349,7 +349,7 @@ function RenderTemplateK({ products, showPrice }: { products: Product[]; showPri
             <div className="k-row">
               {chunk.slice(1).map((p, i) => (
                 <div key={i} className="k-small">
-                  <ProductImg product={p} className="k-small-img" style={{ width: '100%', height: '80px', objectFit: 'cover' }} />
+                  <ProductImg product={p} className="k-small-img" style={{ width: '100%', height: '80px', objectFit: 'contain', background: '#f5f2ed' }} />
                   <div className="k-small-body">
                     <div className="k-small-name">{p.name}</div>
                     {showPrice && <div className="k-small-price">{formatPrice(p.sell)}</div>}
