@@ -63,6 +63,11 @@ export function getMajorCategories(products: Product[]): string[] {
   return Array.from(categories).sort();
 }
 
+export function getMinorCategories(products: Product[]): string[] {
+  const categories = new Set(products.map(p => p.minor_name).filter(Boolean));
+  return Array.from(categories).sort();
+}
+
 export function formatPrice(price: number): string {
   if (!price || price <= 0) return '-';
   return price.toLocaleString('ko-KR') + '원';

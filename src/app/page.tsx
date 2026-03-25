@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { fetchProducts, getImageUrl, formatPrice, getMajorCategories, Product } from '@/lib/supabase';
+import { fetchProducts, getImageUrl, formatPrice, getMajorCategories, getMinorCategories, Product } from '@/lib/supabase';
 
 // ── Types ──
 type Template = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'COVER';
@@ -453,8 +453,10 @@ export default function FlyerPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [noSellProducts, setNoSellProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [minorCategories, setMinorCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('전체');
+  const [activeMinor, setActiveMinor] = useState('전체');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
@@ -502,17 +504,25 @@ export default function FlyerPage() {
       const data = await fetchProducts();
       setProducts(data.filter(p => p.sell > 0));
       setNoSellProducts(data.filter(p => !p.sell || p.sell <= 0));
-      setCategories(getMajorCategories(data.filter(p => p.sell > 0)));
+      const sellData = data.filter(p => p.sell > 0);
+      setCategories(getMajorCategories(sellData));
+      setMinorCategories(getMinorCategories(sellData));
       setLoading(false);
     })();
   }, []);
 
   // ── Filtered Products ──
+  // 현재 대분류에 해당하는 중분류 목록
+  const filteredMinors = activeCategory === '전체'
+    ? minorCategories
+    : [...new Set(products.filter(p => p.major_name === activeCategory).map(p => p.minor_name).filter(Boolean))].sort();
+
   const filtered = products.filter(p => {
     const matchCat = activeCategory === '전체' || p.major_name === activeCategory;
+    const matchMinor = activeMinor === '전체' || p.minor_name === activeMinor;
     const q = search.toLowerCase();
     const matchSearch = !q || p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
-    return matchCat && matchSearch;
+    return matchCat && matchMinor && matchSearch;
   });
 
   // ── Selected Products (maintain order) ──
@@ -680,12 +690,29 @@ export default function FlyerPage() {
                 outline: 'none', marginBottom: '8px',
               }}
             />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-              <div className={`cat-tab ${activeCategory === '전체' ? 'active' : ''}`} onClick={() => setActiveCategory('전체')}>전체</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
+              <div className={`cat-tab ${activeCategory === '전체' ? 'active' : ''}`} onClick={() => { setActiveCategory('전체'); setActiveMinor('전체'); }}>전체</div>
               {categories.map(cat => (
-                <div key={cat} className={`cat-tab ${activeCategory === cat ? 'active' : ''}`} onClick={() => setActiveCategory(cat)}>{cat}</div>
+                <div key={cat} className={`cat-tab ${activeCategory === cat ? 'active' : ''}`} onClick={() => { setActiveCategory(cat); setActiveMinor('전체'); }}>{cat}</div>
               ))}
             </div>
+            {filteredMinors.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+                <div
+                  className={`cat-tab ${activeMinor === '전체' ? 'active' : ''}`}
+                  style={{ fontSize: '10px', padding: '3px 8px' }}
+                  onClick={() => setActiveMinor('전체')}
+                >전체</div>
+                {filteredMinors.map(minor => (
+                  <div
+                    key={minor}
+                    className={`cat-tab ${activeMinor === minor ? 'active' : ''}`}
+                    style={{ fontSize: '10px', padding: '3px 8px' }}
+                    onClick={() => setActiveMinor(minor)}
+                  >{minor}</div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* List Header */}
