@@ -568,9 +568,22 @@ export default function FlyerPage() {
     showToast('품목명이 수정되었습니다');
   }
 
-  // 템플릿별 권장 최대 품목 수 (A4 기준 가독성 유지)
+  // 템플릿별 페이지당 최대 품목 수 (A4 실측 기준)
+  // 가용높이 ~976px = 1123 - header(70) - footer(45) - bodyPad(32)
   const TEMPLATE_MAX: Record<Template, number> = {
-    A: 16, B: 20, C: 18, D: 12, E: 40, F: 16, G: 30, H: 18, I: 12, J: 15, K: 10, L: 20, COVER: 12
+    A: 12,    // 2col × 6row, card~155px+gap
+    B: 18,    // list, row~52px
+    C: 18,    // 3col × 6row, card~150px+gap (small scale)
+    D: 14,    // 2col × 7row, card~65px thumb
+    E: 50,    // 2col table, row~20px compact
+    F: 24,    // 4col × 6row, card~160px
+    G: 40,    // 2col newspaper, row~24px
+    H: 21,    // 3col × 7row, card~130px (small scale)
+    I: 12,    // 3col × 4row, card~220px
+    J: 15,    // 3col × 5row, card~180px
+    K: 15,    // magazine: 3 groups (hero+4small each)
+    L: 25,    // table rows, row~35px
+    COVER: 12
   };
 
   function generateFlyer() {
