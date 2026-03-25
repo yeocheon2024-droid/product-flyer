@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { fetchProducts, getImageUrl, formatPrice, getMajorCategories, getMinorCategories, Product } from '@/lib/supabase';
 
 // ── Types ──
-type Template = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'COVER';
+type Template = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'L' | 'COVER';
 type Theme = 'green' | 'navy' | 'earth' | 'dark' | 'red' | 'purple' | 'teal';
 
 // ── 품목 배열을 페이지별로 나누는 헬퍼 ──
@@ -27,61 +27,35 @@ const THEMES: { id: Theme; color: string; label: string }[] = [
   { id: 'teal', color: '#00695c', label: '틸그린' },
 ];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  '농산품': '#2c5f2e',
-  '수산품': '#1a3a5c',
-  '축산품': '#b71c1c',
-  '공산품': '#5c3d1e',
-};
 
 // ── Helpers ──
 function getScaleVars(count: number, tmpl: Template): React.CSSProperties {
   if (tmpl === 'COVER') return {};
   const vars: Record<string, string> = {};
   if (tmpl === 'A') {
-    if (count <= 4) { vars['--card-img-h'] = '200px'; vars['--card-name-fs'] = '16px'; vars['--card-price-fs'] = '20px'; vars['--card-gap'] = '14px'; }
-    else if (count <= 8) { vars['--card-img-h'] = '140px'; vars['--card-name-fs'] = '13px'; vars['--card-price-fs'] = '16px'; vars['--card-gap'] = '10px'; }
-    else { vars['--card-img-h'] = '100px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '8px'; vars['--card-pad'] = '6px 8px 8px'; }
+    if (count <= 4) { vars['--card-img-h'] = '280px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '12px'; }
+    else if (count <= 8) { vars['--card-img-h'] = '200px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '10px'; }
+    else { vars['--card-img-h'] = '160px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '8px'; }
   } else if (tmpl === 'B') {
     if (count <= 8) { vars['--thumb-size'] = '60px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '6px'; }
     else if (count <= 15) { vars['--thumb-size'] = '44px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '4px'; vars['--card-pad'] = '5px 8px'; }
     else { vars['--thumb-size'] = '32px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '3px'; vars['--card-pad'] = '4px 6px'; }
   } else if (tmpl === 'C') {
-    if (count <= 9) { vars['--card-img-h'] = '150px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '10px'; }
-    else if (count <= 15) { vars['--card-img-h'] = '100px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '6px'; vars['--card-pad'] = '5px 7px 7px'; }
-    else { vars['--card-img-h'] = '70px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '11px'; vars['--card-gap'] = '4px'; vars['--card-pad'] = '4px 5px 5px'; }
+    if (count <= 6) { vars['--card-img-h'] = '220px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '10px'; }
+    else if (count <= 12) { vars['--card-img-h'] = '160px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '8px'; }
+    else { vars['--card-img-h'] = '120px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '11px'; vars['--card-gap'] = '6px'; }
   } else if (tmpl === 'D') {
-    if (count <= 6) { vars['--thumb-size'] = '110px'; vars['--card-name-fs'] = '15px'; vars['--card-price-fs'] = '17px'; vars['--card-gap'] = '10px'; }
-    else if (count <= 10) { vars['--thumb-size'] = '85px'; vars['--card-name-fs'] = '13px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '8px'; vars['--card-pad'] = '8px 10px'; }
-    else { vars['--thumb-size'] = '65px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '5px'; vars['--card-pad'] = '6px 8px'; }
+    if (count <= 6) { vars['--thumb-size'] = '120px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '16px'; vars['--card-gap'] = '10px'; }
+    else if (count <= 10) { vars['--thumb-size'] = '90px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '8px'; }
+    else { vars['--thumb-size'] = '70px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '6px'; }
   } else if (tmpl === 'E') {
     if (count <= 20) { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '13px'; vars['--card-pad'] = '6px 3px'; }
     else if (count <= 40) { vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '12px'; vars['--card-pad'] = '4px 3px'; }
     else { vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '11px'; vars['--card-pad'] = '3px 2px'; vars['--card-spec-fs'] = '9px'; }
   } else if (tmpl === 'F') {
-    if (count <= 8) { vars['--card-img-h'] = '180px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '8px'; }
-    else if (count <= 16) { vars['--card-img-h'] = '130px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '11px'; vars['--card-gap'] = '6px'; }
-    else { vars['--card-img-h'] = '100px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '10px'; vars['--card-gap'] = '4px'; }
-  } else if (tmpl === 'G') {
-    if (count <= 20) { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '10px'; }
-    else if (count <= 40) { vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '7px'; vars['--card-pad'] = '3px 2px'; }
-    else { vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '11px'; vars['--card-gap'] = '5px'; vars['--card-pad'] = '2px 1px'; }
-  } else if (tmpl === 'H') {
-    if (count <= 9) { vars['--card-img-h'] = '110px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '8px'; }
-    else if (count <= 15) { vars['--card-img-h'] = '75px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '6px'; vars['--card-pad'] = '5px 7px 7px'; }
-    else { vars['--card-img-h'] = '55px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '10px'; vars['--card-gap'] = '4px'; vars['--card-pad'] = '4px 5px 5px'; }
-  } else if (tmpl === 'I') {
-    if (count <= 6) { vars['--card-img-h'] = '140px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '22px'; vars['--card-gap'] = '10px'; }
-    else if (count <= 12) { vars['--card-img-h'] = '100px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '8px'; }
-    else { vars['--card-img-h'] = '75px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '6px'; vars['--card-pad'] = '6px 8px'; }
-  } else if (tmpl === 'J') {
-    if (count <= 9) { vars['--card-img-h'] = '140px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '16px'; }
-    else if (count <= 15) { vars['--card-img-h'] = '100px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '12px'; }
-    else { vars['--card-img-h'] = '70px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '8px'; }
-  } else if (tmpl === 'K') {
-    vars['--card-gap'] = '10px';
-    if (count <= 5) { vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '18px'; }
-    else { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '8px'; }
+    if (count <= 2) { vars['--card-img-h'] = '380px'; vars['--card-name-fs'] = '18px'; vars['--card-price-fs'] = '24px'; vars['--card-gap'] = '14px'; }
+    else if (count <= 4) { vars['--card-img-h'] = '260px'; vars['--card-name-fs'] = '15px'; vars['--card-price-fs'] = '20px'; vars['--card-gap'] = '12px'; }
+    else { vars['--card-img-h'] = '180px'; vars['--card-name-fs'] = '13px'; vars['--card-price-fs'] = '17px'; vars['--card-gap'] = '10px'; }
   } else if (tmpl === 'L') {
     if (count <= 10) { vars['--card-name-fs'] = '13px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '0px'; vars['--card-pad'] = '10px 14px'; }
     else if (count <= 20) { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '0px'; vars['--card-pad'] = '8px 14px'; }
@@ -117,7 +91,7 @@ function RenderTemplateA({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-a" style={getScaleVars(products.length, 'A')}>
       {products.map((p, i) => (
         <div key={i} className="card-a">
-          <ProductImg product={p} className="card-img" style={{ width: '100%', height: 'var(--card-img-h, 160px)', objectFit: 'contain', background: '#f5f2ed' }} />
+          <ProductImg product={p} className="card-img" style={{ width: '100%', height: 'var(--card-img-h, 200px)', objectFit: 'contain', background: '#f5f2ed' }} />
           <div className="card-body">
             <div className="card-name">{p.name}</div>
             {p.spec && <div className="card-spec">{p.spec}</div>}
@@ -152,7 +126,7 @@ function RenderTemplateC({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-c" style={getScaleVars(products.length, 'C')}>
       {products.map((p, i) => (
         <div key={i} className="card-c">
-          <ProductImg product={p} className="c-img" style={{ width: '100%', height: 'var(--card-img-h, 150px)', objectFit: 'cover' }} />
+          <ProductImg product={p} className="c-img" style={{ width: '100%', height: 'var(--card-img-h, 180px)', objectFit: 'contain', background: '#f5f2ed' }} />
           <div className="c-body">
             <div className="c-name">{p.name}</div>
             {p.spec && <div className="c-spec">{p.spec}</div>}
@@ -169,10 +143,9 @@ function RenderTemplateD({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-d" style={getScaleVars(products.length, 'D')}>
       {products.map((p, i) => (
         <div key={i} className="card-d">
-          <ProductImg product={p} className="d-img" style={{ width: 'var(--thumb-size, 100px)', objectFit: 'cover' }} />
+          <ProductImg product={p} className="d-img" style={{ width: 'var(--thumb-size, 100px)', height: 'calc(var(--thumb-size, 100px) * 1.3)', objectFit: 'contain', background: '#f5f2ed' }} />
           <div className="d-body">
             <div>
-              <div className="d-cat">{p.major_name}</div>
               <div className="d-name">{p.name}</div>
               {p.spec && <div className="d-spec">{p.spec}</div>}
             </div>
@@ -220,144 +193,12 @@ function RenderTemplateF({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-f" style={getScaleVars(products.length, 'F')}>
       {products.map((p, i) => (
         <div key={i} className="card-f">
-          <ProductImg product={p} className="f-img" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.82 }} />
-          <div className="f-overlay">
+          <ProductImg product={p} className="f-img" style={{ width: '45%', height: 'var(--card-img-h, 260px)', objectFit: 'contain', background: '#f8f6f2' }} />
+          <div className="f-body">
             <div className="f-name">{p.name}</div>
             {p.spec && <div className="f-spec">{p.spec}</div>}
             {showPrice && <div className="f-price">{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
           </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function RenderTemplateG({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
-  const groups = groupByCategory(products);
-  return (
-    <div className="grid-g" style={getScaleVars(products.length, 'G')}>
-      {Object.entries(groups).map(([cat, items]) => (
-        <div key={cat} className="grid-g-section">
-          <div className="grid-g-cat-header">
-            <span className="g-cat-name">{cat}</span>
-            <span className="g-cat-count">{items.length}건</span>
-          </div>
-          <div className="grid-g-rows">
-            {items.map((p, i) => (
-              <div key={i} className="card-g">
-                <div className="g-dot" />
-                <div className="g-info">
-                  <div className="g-name">{p.name}</div>
-                  {p.spec && <div className="g-spec">{p.spec}</div>}
-                </div>
-                {showPrice && <div className="g-price">{formatPrice(p.sell)}</div>}
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function RenderTemplateH({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
-  return (
-    <div className="grid-h" style={getScaleVars(products.length, 'H')}>
-      {products.map((p, i) => {
-        const catColor = CATEGORY_COLORS[p.major_name] || '#5c3d1e';
-        return (
-          <div key={i} className="card-h" style={{ background: `${catColor}15` }}>
-            <div className="h-cat-bar" style={{ background: catColor }}>{p.major_name || '기타'}</div>
-            <ProductImg product={p} className="h-img" style={{ width: '100%', height: 'var(--card-img-h, 100px)', objectFit: 'contain', background: 'rgba(0,0,0,0.04)' }} />
-            <div className="h-body">
-              <div className="h-name">{p.name}</div>
-              {p.spec && <div className="h-spec">{p.spec}</div>}
-              {showPrice && <div className="h-price" style={{ background: catColor }}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ═══ TEMPLATE I: 마트형 (Supermarket Sale) ═══
-function RenderTemplateI({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
-  return (
-    <div className="grid-i" style={getScaleVars(products.length, 'I')}>
-      {products.map((p, i) => (
-        <div key={i} className="card-i">
-          <div className="i-badge">SALE</div>
-          <ProductImg product={p} className="i-img" style={{ width: '100%', height: 'var(--card-img-h, 140px)', objectFit: 'contain', background: '#faf8f0' }} />
-          <div className="i-body">
-            <div className="i-name">{p.name}</div>
-            {p.spec && <div className="i-spec">{p.spec}</div>}
-            {showPrice && (
-              <div className="i-price-wrap">
-                <div className="i-price">{formatPrice(p.sell).replace('원', '')}<span>원</span></div>
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ═══ TEMPLATE J: 미니멀형 (Minimal Clean) ═══
-function RenderTemplateJ({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
-  return (
-    <div className="grid-j" style={getScaleVars(products.length, 'J')}>
-      {products.map((p, i) => (
-        <div key={i} className="card-j">
-          <ProductImg product={p} className="j-img" style={{ width: '100%', height: 'var(--card-img-h, 140px)', objectFit: 'contain', background: '#f5f3ef' }} />
-          <div className="j-body">
-            <div className="j-name">{p.name}</div>
-            {p.spec && <div className="j-spec">{p.spec}</div>}
-            {showPrice && <div className="j-price">{formatPrice(p.sell)}</div>}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ═══ TEMPLATE K: 매거진형 (Magazine Mixed) ═══
-function RenderTemplateK({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
-  // 1번째: 대형, 2~5번째: 소형 4열, 반복
-  const chunks: Product[][] = [];
-  for (let i = 0; i < products.length; i += 5) {
-    chunks.push(products.slice(i, i + 5));
-  }
-  return (
-    <div className="grid-k" style={getScaleVars(products.length, 'K')}>
-      {chunks.map((chunk, ci) => (
-        <div key={ci} className="k-group">
-          {/* Hero card */}
-          {chunk[0] && (
-            <div className="k-hero">
-              <ProductImg product={chunk[0]} className="k-hero-img" style={{ width: '100%', height: '200px', objectFit: 'contain', background: '#f5f2ed' }} />
-              <div className="k-hero-overlay">
-                <div className="k-hero-name">{chunk[0].name}</div>
-                {chunk[0].spec && <div className="k-hero-spec">{chunk[0].spec}</div>}
-                {showPrice && <div className="k-hero-price">{formatPrice(chunk[0].sell)}</div>}
-              </div>
-            </div>
-          )}
-          {/* Small cards row */}
-          {chunk.length > 1 && (
-            <div className="k-row">
-              {chunk.slice(1).map((p, i) => (
-                <div key={i} className="k-small">
-                  <ProductImg product={p} className="k-small-img" style={{ width: '100%', height: '80px', objectFit: 'contain', background: '#f5f2ed' }} />
-                  <div className="k-small-body">
-                    <div className="k-small-name">{p.name}</div>
-                    {showPrice && <div className="k-small-price">{formatPrice(p.sell)}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       ))}
     </div>
@@ -571,18 +412,13 @@ export default function FlyerPage() {
   // 템플릿별 페이지당 최대 품목 수 (A4 실측 기준)
   // 가용높이 ~976px = 1123 - header(70) - footer(45) - bodyPad(32)
   const TEMPLATE_MAX: Record<Template, number> = {
-    A: 12,    // 2col × 6row, card~155px+gap
-    B: 18,    // list, row~52px
-    C: 18,    // 3col × 6row, card~150px+gap (small scale)
-    D: 14,    // 2col × 7row, card~65px thumb
-    E: 50,    // 2col table, row~20px compact
-    F: 24,    // 4col × 6row, card~160px
-    G: 40,    // 2col newspaper, row~24px
-    H: 21,    // 3col × 7row, card~130px (small scale)
-    I: 12,    // 3col × 4row, card~220px
-    J: 15,    // 3col × 5row, card~180px
-    K: 15,    // magazine: 3 groups (hero+4small each)
-    L: 25,    // table rows, row~35px
+    A: 8,     // 2col × 4row, tall portrait cards
+    B: 18,    // list rows
+    C: 12,    // 3col × 4row, portrait cards
+    D: 10,    // 2col × 5row, horizontal cards with portrait image
+    E: 50,    // 2col compact table
+    F: 4,     // 1col large showcase cards
+    L: 25,    // table rows
     COVER: 12
   };
 
@@ -861,18 +697,13 @@ export default function FlyerPage() {
             <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '8px' }}>레이아웃</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
               {([
-                { id: 'A' as Template, label: '이미지2열' },
-                { id: 'B' as Template, label: '가격표' },
-                { id: 'C' as Template, label: '3열그리드' },
-                { id: 'D' as Template, label: '좌우분할' },
-                { id: 'E' as Template, label: '카탈로그' },
-                { id: 'F' as Template, label: '프리미엄' },
-                { id: 'G' as Template, label: '신문형' },
-                { id: 'H' as Template, label: '컬러블록' },
-                { id: 'I' as Template, label: '마트형' },
-                { id: 'J' as Template, label: '미니멀' },
-                { id: 'K' as Template, label: '매거진' },
-                { id: 'L' as Template, label: '테이블' },
+                { id: 'A' as Template, label: '세로카드2열' },
+                { id: 'B' as Template, label: '리스트형' },
+                { id: 'C' as Template, label: '세로카드3열' },
+                { id: 'D' as Template, label: '가로배치형' },
+                { id: 'E' as Template, label: '가격표' },
+                { id: 'F' as Template, label: '대형쇼케이스' },
+                { id: 'L' as Template, label: '테이블형' },
               ]).map(t => (
                 <div
                   key={t.id}
@@ -1102,8 +933,7 @@ export default function FlyerPage() {
                 // 일반 템플릿 (다중 페이지 자동 분할)
                 const RenderMap: Record<string, React.FC<{ products: Product[]; showPrice: boolean }>> = {
                   A: RenderTemplateA, B: RenderTemplateB, C: RenderTemplateC, D: RenderTemplateD,
-                  E: RenderTemplateE, F: RenderTemplateF, G: RenderTemplateG, H: RenderTemplateH,
-                  I: RenderTemplateI, J: RenderTemplateJ, K: RenderTemplateK, L: RenderTemplateL,
+                  E: RenderTemplateE, F: RenderTemplateF, L: RenderTemplateL,
                 };
                 const TemplateRenderer = RenderMap[template];
 
