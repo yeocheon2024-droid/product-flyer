@@ -180,13 +180,16 @@ body {
 .flyer-footer .f-contact {
   background: var(--accent);
   color: #fff;
-  font-size: 15px;
-  font-weight: 900;
+  font-size: 13px;
+  font-weight: 800;
   letter-spacing: -0.3px;
-  padding: 12px 24px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  line-height: 1.4;
+  text-align: center;
+  white-space: pre-line;
   white-space: nowrap;
 }
 

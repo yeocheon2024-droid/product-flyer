@@ -319,7 +319,22 @@ export default function FlyerPage() {
   const [companyName, setCompanyName] = useState('지구농산');
   const [subtitle, setSubtitle] = useState('거래처가 믿고 맡길 수 있는 식자재 유통 파트너');
   const [footerNote, setFooterNote] = useState('※ 가격은 부가세 별도입니다. 주문·문의는 담당자에게 연락해 주세요.');
-  const [contact, setContact] = useState('Tel. 1566-1521');
+  const CONTACTS = [
+    { id: 0, label: '대표', number: '1566-1521' },
+    { id: 1, label: '1번', number: '010-4478-5533' },
+    { id: 2, label: '2번', number: '010-4460-5544' },
+    { id: 3, label: '3번', number: '010-2681-4465' },
+    { id: 4, label: '4번', number: '010-2699-4411' },
+    { id: 5, label: '5번', number: '010-3064-4422' },
+    { id: 6, label: '6번', number: '010-3370-1188' },
+    { id: 7, label: '7번', number: '010-7359-5544' },
+    { id: 8, label: '8번', number: '010-4407-5533' },
+    { id: 9, label: '9번', number: '010-9836-5533' },
+    { id: 10, label: '10번', number: '010-2657-9966' },
+  ];
+  const [selectedContacts, setSelectedContacts] = useState<Set<number>>(new Set([0]));
+  const [showContactPicker, setShowContactPicker] = useState(false);
+  const contact = CONTACTS.filter(c => selectedContacts.has(c.id)).map(c => `Tel. ${c.number}`).join(' / ');
   const [flyerDate, setFlyerDate] = useState(new Date().toISOString().slice(0, 10));
   const [showPrice, setShowPrice] = useState(true);
   const [zoom, setZoom] = useState(0.7);
@@ -490,7 +505,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.4</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.5</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
@@ -755,7 +770,47 @@ export default function FlyerPage() {
                 style={{ width: '100%', padding: '6px 8px', border: '1px solid var(--border)', borderRadius: '5px', fontFamily: 'inherit', fontSize: '12px', background: 'var(--panel)', outline: 'none', height: '52px', resize: 'vertical' }}
               />
             </div>
-            <OptionInput label="연락처" value={contact} onChange={setContact} />
+            <div style={{ marginBottom: '10px' }}>
+              <div
+                onClick={() => setShowContactPicker(!showContactPicker)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none', marginBottom: '5px' }}
+              >
+                <label style={{ fontSize: '11px', fontWeight: 700 }}>연락처 ({selectedContacts.size}명 선택)</label>
+                <span style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: 600 }}>{showContactPicker ? '접기' : '펼치기'}</span>
+              </div>
+              {showContactPicker && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {CONTACTS.map(c => {
+                    const isOn = selectedContacts.has(c.id);
+                    return (
+                      <div
+                        key={c.id}
+                        onClick={() => {
+                          setSelectedContacts(prev => {
+                            const next = new Set(prev);
+                            if (next.has(c.id)) { next.delete(c.id); } else { next.add(c.id); }
+                            return next;
+                          });
+                        }}
+                        style={{
+                          padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '10px', fontWeight: 700,
+                          border: isOn ? '2px solid var(--accent)' : '1px solid var(--border)',
+                          background: isOn ? '#fef3c7' : 'var(--panel)',
+                          color: isOn ? 'var(--accent)' : '#888',
+                          transition: 'all 0.12s',
+                        }}
+                      >
+                        <div>{c.label}</div>
+                        <div style={{ fontSize: '9px', fontWeight: 600, marginTop: '1px' }}>{c.number}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '4px', lineHeight: 1.4 }}>
+                {contact || '연락처를 선택하세요'}
+              </div>
+            </div>
             <div style={{ marginBottom: '10px' }}>
               <label style={{ fontSize: '11px', fontWeight: 700, display: 'block', marginBottom: '5px' }}>기준일</label>
               <input type="date" value={flyerDate} onChange={e => setFlyerDate(e.target.value)}
