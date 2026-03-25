@@ -457,20 +457,8 @@ export default function FlyerPage() {
     const prevTransform = container ? container.style.transform : '';
     if (container) container.style.transform = 'scale(1)';
 
-    // 캡처 대상의 원본 스타일 저장 & 제한 해제
-    const prevHeight = pageEl.style.height;
-    const prevMaxHeight = pageEl.style.maxHeight;
-    const prevOverflow = pageEl.style.overflow;
-    pageEl.style.height = 'auto';
-    pageEl.style.maxHeight = 'none';
-    pageEl.style.overflow = 'visible';
-
     // 렌더링 대기
     await new Promise(r => setTimeout(r, 200));
-
-    // 실제 콘텐츠 높이 측정
-    const realHeight = pageEl.scrollHeight;
-    const targetHeight = Math.max(realHeight, 1123);
 
     const canvas = await html2canvas(pageEl, {
       scale: scale,
@@ -479,14 +467,7 @@ export default function FlyerPage() {
       backgroundColor: '#ffffff',
       logging: false,
       imageTimeout: 15000,
-      width: 794,
-      height: targetHeight,
     });
-
-    // 원본 스타일 복구
-    pageEl.style.height = prevHeight;
-    pageEl.style.maxHeight = prevMaxHeight;
-    pageEl.style.overflow = prevOverflow;
     if (container) container.style.transform = prevTransform;
     return canvas;
   }
@@ -544,7 +525,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v3.3</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v3.4</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
