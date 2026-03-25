@@ -452,10 +452,21 @@ export default function FlyerPage() {
   // ── Export (다중 페이지 지원) ──
   async function captureFlyer(pageEl: HTMLElement, scale: number) {
     const html2canvas = (await import('html2canvas')).default;
-    // 캡처 전 zoom 리셋
+    // 캡처 전: zoom을 1로, 페이지 크기를 원본으로 고정
     const container = flyerRef.current;
     const prevTransform = container ? container.style.transform : '';
     if (container) container.style.transform = 'scale(1)';
+
+    // 캡처 대상의 원본 스타일 저장 & 고정
+    const prevHeight = pageEl.style.height;
+    const prevMaxHeight = pageEl.style.maxHeight;
+    const prevOverflow = pageEl.style.overflow;
+    pageEl.style.height = '1123px';
+    pageEl.style.maxHeight = '1123px';
+    pageEl.style.overflow = 'hidden';
+
+    // 렌더링 대기
+    await new Promise(r => setTimeout(r, 100));
 
     const canvas = await html2canvas(pageEl, {
       scale: scale,
@@ -464,23 +475,12 @@ export default function FlyerPage() {
       backgroundColor: '#ffffff',
       logging: false,
       imageTimeout: 15000,
-      onclone: function(clonedDoc: Document) {
-        const imgs = clonedDoc.querySelectorAll('img');
-        imgs.forEach(function(img) { img.crossOrigin = 'anonymous'; });
-        // 클론된 페이지의 크기를 원본과 동일하게 고정
-        const clonedPages = clonedDoc.querySelectorAll('.flyer-a4');
-        clonedPages.forEach(function(p) {
-          (p as HTMLElement).style.width = '794px';
-          (p as HTMLElement).style.minHeight = '1123px';
-          (p as HTMLElement).style.height = 'auto';
-          (p as HTMLElement).style.maxHeight = 'none';
-          (p as HTMLElement).style.transform = 'none';
-          (p as HTMLElement).style.boxShadow = 'none';
-          (p as HTMLElement).style.overflow = 'visible';
-        });
-      }
     });
 
+    // 원본 스타일 복구
+    pageEl.style.height = prevHeight;
+    pageEl.style.maxHeight = prevMaxHeight;
+    pageEl.style.overflow = prevOverflow;
     if (container) container.style.transform = prevTransform;
     return canvas;
   }
@@ -538,7 +538,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v3.1</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v3.2</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
