@@ -125,7 +125,8 @@ body {
 /* ── A4 Flyer Base ── */
 .flyer-a4 {
   width: 794px;
-  min-height: 1123px;
+  height: 1123px;
+  max-height: 1123px;
   background: #fff;
   box-shadow: 0 4px 30px rgba(0,0,0,0.25);
   flex-shrink: 0;
@@ -133,6 +134,7 @@ body {
   flex-direction: column;
   transform-origin: top center;
   transition: transform 0.2s;
+  overflow: hidden;
 }
 .flyer-header {
   padding: 18px 28px 14px;
