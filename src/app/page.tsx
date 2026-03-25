@@ -7,6 +7,16 @@ import { fetchProducts, getImageUrl, formatPrice, getMajorCategories, getMinorCa
 type Template = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'COVER';
 type Theme = 'green' | 'navy' | 'earth' | 'dark' | 'red' | 'purple' | 'teal';
 
+// ── 품목 배열을 페이지별로 나누는 헬퍼 ──
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  if (size <= 0) return [arr];
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks.length > 0 ? chunks : [[]];
+}
+
 const THEMES: { id: Theme; color: string; label: string }[] = [
   { id: 'earth', color: '#78350f', label: '어스' },
   { id: 'green', color: '#2c5f2e', label: '그린' },
@@ -566,42 +576,54 @@ export default function FlyerPage() {
   function generateFlyer() {
     if (selected.size === 0) { showToast('품목을 선택해 주세요'); return; }
     const max = TEMPLATE_MAX[template] || 20;
-    if (selectedProducts.length > max) {
-      if (!confirm(`현재 ${selectedProducts.length}개 품목이 선택되었습니다.\n\n이 템플릿의 A4 권장 수량은 ${max}개입니다.\n초과 시 글씨가 작아져 가독성이 떨어질 수 있습니다.\n\n그래도 생성하시겠습니까?`)) return;
-    }
+    const totalPages = Math.ceil(selectedProducts.length / max);
     setGenerated(true);
-    if (selectedProducts.length > max) {
-      showToast(`⚠ ${selectedProducts.length}개 품목 생성됨 (권장 ${max}개 초과)`);
+    if (totalPages > 1) {
+      showToast(`전단지 생성 완료! (${selectedProducts.length}개 품목 · ${totalPages}페이지)`);
     } else {
       showToast(`전단지 생성 완료! (${selectedProducts.length}개 품목)`);
     }
   }
 
-  // ── Export ──
+  // ── Export (다중 페이지 지원) ──
   async function exportPDF() {
-    if (!flyerRef.current) return;
+    const container = flyerRef.current;
+    if (!container) return;
     showToast('PDF 생성 중...');
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
-    const canvas = await html2canvas(flyerRef.current, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+    const pages = container.querySelectorAll('.flyer-a4');
+    if (pages.length === 0) return;
+
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pdfW = pdf.internal.pageSize.getWidth();
     const pdfH = pdf.internal.pageSize.getHeight();
-    pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pdfW, pdfH);
+
+    for (let i = 0; i < pages.length; i++) {
+      if (i > 0) pdf.addPage();
+      const canvas = await html2canvas(pages[i] as HTMLElement, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pdfW, pdfH);
+    }
     pdf.save(`전단지_${flyerDate}.pdf`);
-    showToast('PDF 다운로드 완료!');
+    showToast(`PDF 다운로드 완료! (${pages.length}페이지)`);
   }
 
   async function exportPNG() {
-    if (!flyerRef.current) return;
+    const container = flyerRef.current;
+    if (!container) return;
     showToast('PNG 생성 중...');
     const html2canvas = (await import('html2canvas')).default;
-    const canvas = await html2canvas(flyerRef.current, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
-    const link = document.createElement('a');
-    link.download = `전단지_${flyerDate}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast('PNG 다운로드 완료!');
+    const pages = container.querySelectorAll('.flyer-a4');
+    if (pages.length === 0) return;
+
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = await html2canvas(pages[i] as HTMLElement, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+      const link = document.createElement('a');
+      link.download = pages.length > 1 ? `전단지_${flyerDate}_${i + 1}.png` : `전단지_${flyerDate}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+    showToast(`PNG 다운로드 완료! (${pages.length}장)`);
   }
 
   function doPrint() { window.print(); }
@@ -968,7 +990,9 @@ export default function FlyerPage() {
           }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--muted)' }}>미리보기</span>
             <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
-              {generated ? `${selectedProducts.length}개 품목 · 템플릿 ${template}` : '품목을 선택하고 생성하세요'}
+              {generated
+                ? `${selectedProducts.length}개 품목 · 템플릿 ${template}${Math.ceil(selectedProducts.length / (TEMPLATE_MAX[template] || 20)) > 1 ? ` · ${Math.ceil(selectedProducts.length / (TEMPLATE_MAX[template] || 20))}페이지` : ''}`
+                : '품목을 선택하고 생성하세요'}
             </span>
             <div style={{ display: 'flex', gap: '4px', marginLeft: 'auto' }}>
               <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}
@@ -988,92 +1012,129 @@ export default function FlyerPage() {
             </div>
           </div>
 
-          {/* Preview Area */}
+          {/* Preview Area (다중 페이지) */}
           <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
             <div
               ref={flyerRef}
               id="printArea"
-              className={`flyer-a4 theme-${theme}`}
               style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
             >
-              {/* Flyer Header */}
-              {template !== 'COVER' ? (
-                <>
-                  <div className="flyer-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <img src="/logo.png" alt="" style={{ height: '32px', width: '32px' }} />
-                      <div>
-                        <div className="flyer-company">{companyName}</div>
-                        <div className="flyer-subtitle">{subtitle}</div>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div className="flyer-tagline">{showPrice ? '납품 가격표' : '품목 안내'}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
-                    </div>
-                  </div>
+              {(() => {
+                // 페이지별 품목 분할
+                const max = TEMPLATE_MAX[template] || 20;
+                const pageChunks = template === 'COVER'
+                  ? [selectedProducts]
+                  : (selectedProducts.length > 0 ? chunkArray(selectedProducts, max) : [[]]);
+                const totalPages = pageChunks.length;
 
-                  {/* Flyer Body */}
-                  <div className="flyer-body">
-                    {!generated || selectedProducts.length === 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '600px', gap: '12px', color: 'var(--muted)', textAlign: 'center' }}>
-                        <p style={{ fontSize: '13px' }}>품목을 선택 후<br />좌측 하단의 &quot;전단지 생성&quot; 버튼을 누르세요.</p>
+                // 미생성 상태
+                if (!generated || selectedProducts.length === 0) {
+                  return (
+                    <div className={`flyer-a4 theme-${theme}`}>
+                      <div className="flyer-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <img src="/logo.png" alt="" style={{ height: '32px', width: '32px' }} />
+                          <div>
+                            <div className="flyer-company">{companyName}</div>
+                            <div className="flyer-subtitle">{subtitle}</div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div className="flyer-tagline">{template === 'COVER' ? '회사 소개' : (showPrice ? '납품 가격표' : '품목 안내')}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
+                        </div>
                       </div>
-                    ) : (
-                      <>
-                        {template === 'A' && <RenderTemplateA products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'B' && <RenderTemplateB products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'C' && <RenderTemplateC products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'D' && <RenderTemplateD products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'E' && <RenderTemplateE products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'F' && <RenderTemplateF products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'G' && <RenderTemplateG products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'H' && <RenderTemplateH products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'I' && <RenderTemplateI products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'J' && <RenderTemplateJ products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'K' && <RenderTemplateK products={selectedProducts} showPrice={showPrice} />}
-                        {template === 'L' && <RenderTemplateL products={selectedProducts} showPrice={showPrice} />}
-                      </>
-                    )}
-                  </div>
+                      <div className="flyer-body">
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '600px', gap: '12px', color: 'var(--muted)', textAlign: 'center' }}>
+                          <p style={{ fontSize: '13px' }}>
+                            {template === 'COVER' ? '미끼상품 3개 이상 선택 후' : '품목을 선택 후'}<br />
+                            좌측 하단의 &quot;전단지 생성&quot; 버튼을 누르세요.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flyer-footer">
+                        <div className="f-note">{footerNote}</div>
+                        <div className="f-contact">{contact}</div>
+                      </div>
+                    </div>
+                  );
+                }
 
-                  {/* Flyer Footer */}
-                  <div className="flyer-footer">
-                    <div className="f-note">{footerNote}</div>
-                    <div className="f-contact">{contact}</div>
-                  </div>
-                </>
-              ) : (
-                /* COVER TEMPLATE */
-                <>
-                  <div className="flyer-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <img src="/logo.png" alt="" style={{ height: '32px', width: '32px' }} />
-                      <div>
-                        <div className="flyer-company">{companyName}</div>
-                        <div className="flyer-subtitle">{subtitle}</div>
+                // COVER 템플릿 (단일 페이지)
+                if (template === 'COVER') {
+                  return (
+                    <div className={`flyer-a4 theme-${theme}`}>
+                      <div className="flyer-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <img src="/logo.png" alt="" style={{ height: '32px', width: '32px' }} />
+                          <div>
+                            <div className="flyer-company">{companyName}</div>
+                            <div className="flyer-subtitle">{subtitle}</div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div className="flyer-tagline">회사 소개</div>
+                          <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
+                        </div>
+                      </div>
+                      <RenderCover products={selectedProducts} showPrice={showPrice} settings={coverSettings} />
+                      <div className="flyer-footer">
+                        <div className="f-note">{footerNote}</div>
+                        <div className="f-contact">{contact}</div>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div className="flyer-tagline">회사 소개</div>
-                      <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
+                  );
+                }
+
+                // 일반 템플릿 (다중 페이지 자동 분할)
+                const RenderMap: Record<string, React.FC<{ products: Product[]; showPrice: boolean }>> = {
+                  A: RenderTemplateA, B: RenderTemplateB, C: RenderTemplateC, D: RenderTemplateD,
+                  E: RenderTemplateE, F: RenderTemplateF, G: RenderTemplateG, H: RenderTemplateH,
+                  I: RenderTemplateI, J: RenderTemplateJ, K: RenderTemplateK, L: RenderTemplateL,
+                };
+                const TemplateRenderer = RenderMap[template];
+
+                return pageChunks.map((chunk, pageIdx) => (
+                  <div
+                    key={pageIdx}
+                    className={`flyer-a4 theme-${theme}`}
+                    style={{ marginBottom: pageIdx < totalPages - 1 ? '24px' : 0 }}
+                  >
+                    {/* Header */}
+                    <div className="flyer-header">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src="/logo.png" alt="" style={{ height: '32px', width: '32px' }} />
+                        <div>
+                          <div className="flyer-company">{companyName}</div>
+                          <div className="flyer-subtitle">{subtitle}</div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div className="flyer-tagline">{showPrice ? '납품 가격표' : '품목 안내'}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
+                      </div>
                     </div>
-                  </div>
-                  {!generated || selectedProducts.length === 0 ? (
+
+                    {/* Body */}
                     <div className="flyer-body">
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '600px', gap: '12px', color: 'var(--muted)', textAlign: 'center' }}>
-                        <p style={{ fontSize: '13px' }}>미끼상품 3개 이상 선택 후<br />&quot;전단지 생성&quot; 버튼을 누르세요.</p>
+                      {TemplateRenderer && <TemplateRenderer products={chunk} showPrice={showPrice} />}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flyer-footer">
+                      <div className="f-note">{footerNote}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {totalPages > 1 && (
+                          <span style={{ fontSize: '10px', color: 'var(--muted)', fontWeight: 600 }}>
+                            {pageIdx + 1} / {totalPages}
+                          </span>
+                        )}
+                        <div className="f-contact">{contact}</div>
                       </div>
                     </div>
-                  ) : (
-                    <RenderCover products={selectedProducts} showPrice={showPrice} settings={coverSettings} />
-                  )}
-                  <div className="flyer-footer">
-                    <div className="f-note">{footerNote}</div>
-                    <div className="f-contact">{contact}</div>
                   </div>
-                </>
-              )}
+                ));
+              })()}
             </div>
           </div>
         </div>

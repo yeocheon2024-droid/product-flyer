@@ -651,15 +651,27 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Print ── */
+/* ── Print (다중 페이지 지원) ── */
 @media print {
   @page { margin: 0; size: A4 portrait; }
   body > * { display: none !important; }
-  #printArea { display: block !important; }
+  #printArea {
+    display: block !important;
+    transform: none !important;
+  }
   #printArea .flyer-a4 {
     box-shadow: none !important;
     transform: none !important;
     width: 210mm !important;
     min-height: 297mm !important;
+    max-height: 297mm !important;
+    page-break-after: always;
+    break-after: page;
+    margin-bottom: 0 !important;
+    overflow: hidden;
+  }
+  #printArea .flyer-a4:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
   }
 }
