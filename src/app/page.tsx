@@ -91,7 +91,7 @@ function RenderTemplateA({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-a" style={getScaleVars(products.length, 'A')}>
       {products.map((p, i) => (
         <div key={i} className="card-a">
-          <ProductImg product={p} className="card-img" style={{ width: '100%', height: 'var(--card-img-h, 200px)', objectFit: 'contain', background: '#f5f2ed' }} />
+          <ProductImg product={p} className="card-img" style={{ width: '100%', height: 'var(--card-img-h, 200px)', objectFit: 'contain', background: '#fff' }} />
           <div className="card-body">
             <div className="card-name">{p.name}</div>
             {p.spec && <div className="card-spec">{p.spec}</div>}
@@ -126,7 +126,7 @@ function RenderTemplateC({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-c" style={getScaleVars(products.length, 'C')}>
       {products.map((p, i) => (
         <div key={i} className="card-c">
-          <ProductImg product={p} className="c-img" style={{ width: '100%', height: 'var(--card-img-h, 180px)', objectFit: 'contain', background: '#f5f2ed' }} />
+          <ProductImg product={p} className="c-img" style={{ width: '100%', height: 'var(--card-img-h, 180px)', objectFit: 'contain', background: '#fff' }} />
           <div className="c-body">
             <div className="c-name">{p.name}</div>
             {p.spec && <div className="c-spec">{p.spec}</div>}
@@ -143,7 +143,7 @@ function RenderTemplateD({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-d" style={getScaleVars(products.length, 'D')}>
       {products.map((p, i) => (
         <div key={i} className="card-d">
-          <ProductImg product={p} className="d-img" style={{ width: 'var(--thumb-size, 100px)', height: 'calc(var(--thumb-size, 100px) * 1.3)', objectFit: 'contain', background: '#f5f2ed' }} />
+          <ProductImg product={p} className="d-img" style={{ width: 'var(--thumb-size, 100px)', height: 'calc(var(--thumb-size, 100px) * 1.3)', objectFit: 'contain', background: '#fff' }} />
           <div className="d-body">
             <div>
               <div className="d-name">{p.name}</div>
@@ -193,7 +193,7 @@ function RenderTemplateF({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-f" style={getScaleVars(products.length, 'F')}>
       {products.map((p, i) => (
         <div key={i} className="card-f">
-          <ProductImg product={p} className="f-img" style={{ width: '45%', height: 'var(--card-img-h, 260px)', objectFit: 'contain', background: '#f8f6f2' }} />
+          <ProductImg product={p} className="f-img" style={{ width: '45%', height: 'var(--card-img-h, 260px)', objectFit: 'contain', background: '#fff' }} />
           <div className="f-body">
             <div className="f-name">{p.name}</div>
             {p.spec && <div className="f-spec">{p.spec}</div>}

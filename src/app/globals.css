@@ -212,7 +212,7 @@ body {
   min-height: 0;
   object-fit: contain;
   display: block;
-  background: #f5f2ed;
+  background: #fff;
   flex: 1 1 auto;
 }
 .card-a .card-img-ph {
@@ -389,7 +389,7 @@ body {
   height: var(--card-img-h, 260px);
   object-fit: contain;
   display: block;
-  background: #f8f6f2;
+  background: #fff;
   flex-shrink: 0;
 }
 .card-f .f-body {
@@ -500,7 +500,7 @@ body {
 }
 .l-row:last-child { border-bottom: none; }
 .l-row-head {
-  background: #f5f2ed; font-weight: 800; font-size: 10px;
+  background: #fff; font-weight: 800; font-size: 10px;
   color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
   padding: 6px 14px;
 }
