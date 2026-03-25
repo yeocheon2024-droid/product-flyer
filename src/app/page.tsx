@@ -462,16 +462,19 @@ export default function FlyerPage() {
       useCORS: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
-      width: 794,
-      height: 1123,
-      windowWidth: 794,
-      windowHeight: 1123,
       logging: false,
       imageTimeout: 15000,
       onclone: function(clonedDoc: Document) {
-        // 클론된 문서에서 이미지 CORS 설정
         const imgs = clonedDoc.querySelectorAll('img');
         imgs.forEach(function(img) { img.crossOrigin = 'anonymous'; });
+        // 클론된 페이지의 크기를 원본과 동일하게 고정
+        const clonedPages = clonedDoc.querySelectorAll('.flyer-a4');
+        clonedPages.forEach(function(p) {
+          (p as HTMLElement).style.width = '794px';
+          (p as HTMLElement).style.height = '1123px';
+          (p as HTMLElement).style.transform = 'none';
+          (p as HTMLElement).style.boxShadow = 'none';
+        });
       }
     });
 
@@ -532,7 +535,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.9</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v3.0</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
