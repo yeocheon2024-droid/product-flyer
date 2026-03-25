@@ -427,10 +427,10 @@ export default function FlyerPage() {
   // 템플릿별 페이지당 최대 품목 수 (A4 실측 기준)
   // 가용높이 ~976px = 1123 - header(70) - footer(45) - bodyPad(32)
   const TEMPLATE_MAX: Record<Template, number> = {
-    A: 8,     // 2col × 4row, tall portrait cards
+    A: 12,    // 2col × 6row, tall portrait cards
     B: 18,    // list rows
-    C: 12,    // 3col × 4row, portrait cards
-    D: 14,    // 2col × 7row, horizontal cards with portrait image
+    C: 18,    // 3col × 6row, portrait cards
+    D: 18,    // 2col × 9row, horizontal cards with portrait image
     E: 50,    // 2col compact table
     F: 3,     // 1col large showcase cards
     L: 25,    // table rows
@@ -505,7 +505,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.7</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.8</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
