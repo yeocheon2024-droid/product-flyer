@@ -505,7 +505,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.5</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.6</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
