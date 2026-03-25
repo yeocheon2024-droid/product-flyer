@@ -417,7 +417,7 @@ export default function FlyerPage() {
     C: 12,    // 3col × 4row, portrait cards
     D: 10,    // 2col × 5row, horizontal cards with portrait image
     E: 50,    // 2col compact table
-    F: 4,     // 1col large showcase cards
+    F: 3,     // 1col large showcase cards
     L: 25,    // table rows
     COVER: 12
   };
