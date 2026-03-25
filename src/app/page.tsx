@@ -450,11 +450,39 @@ export default function FlyerPage() {
   }
 
   // ── Export (다중 페이지 지원) ──
+  async function captureFlyer(pageEl: HTMLElement, scale: number) {
+    const html2canvas = (await import('html2canvas')).default;
+    // 캡처 전 zoom 리셋
+    const container = flyerRef.current;
+    const prevTransform = container ? container.style.transform : '';
+    if (container) container.style.transform = 'scale(1)';
+
+    const canvas = await html2canvas(pageEl, {
+      scale: scale,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: '#ffffff',
+      width: 794,
+      height: 1123,
+      windowWidth: 794,
+      windowHeight: 1123,
+      logging: false,
+      imageTimeout: 15000,
+      onclone: function(clonedDoc: Document) {
+        // 클론된 문서에서 이미지 CORS 설정
+        const imgs = clonedDoc.querySelectorAll('img');
+        imgs.forEach(function(img) { img.crossOrigin = 'anonymous'; });
+      }
+    });
+
+    if (container) container.style.transform = prevTransform;
+    return canvas;
+  }
+
   async function exportPDF() {
     const container = flyerRef.current;
     if (!container) return;
     showToast('PDF 생성 중...');
-    const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
     const pages = container.querySelectorAll('.flyer-a4');
     if (pages.length === 0) return;
@@ -465,8 +493,8 @@ export default function FlyerPage() {
 
     for (let i = 0; i < pages.length; i++) {
       if (i > 0) pdf.addPage();
-      const canvas = await html2canvas(pages[i] as HTMLElement, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pdfW, pdfH);
+      const canvas = await captureFlyer(pages[i] as HTMLElement, 3);
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfW, pdfH);
     }
     pdf.save(`전단지_${flyerDate}.pdf`);
     showToast(`PDF 다운로드 완료! (${pages.length}페이지)`);
@@ -476,12 +504,11 @@ export default function FlyerPage() {
     const container = flyerRef.current;
     if (!container) return;
     showToast('PNG 생성 중...');
-    const html2canvas = (await import('html2canvas')).default;
     const pages = container.querySelectorAll('.flyer-a4');
     if (pages.length === 0) return;
 
     for (let i = 0; i < pages.length; i++) {
-      const canvas = await html2canvas(pages[i] as HTMLElement, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+      const canvas = await captureFlyer(pages[i] as HTMLElement, 3);
       const link = document.createElement('a');
       link.download = pages.length > 1 ? `전단지_${flyerDate}_${i + 1}.png` : `전단지_${flyerDate}.png`;
       link.href = canvas.toDataURL('image/png');
@@ -505,7 +532,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.8</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.9</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
