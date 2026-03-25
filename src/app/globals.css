@@ -14,15 +14,15 @@
 
 /* ── CSS Variables ── */
 :root {
-  --bg: #f5f0e8;
-  --panel: #fefcf8;
-  --border: #e0d6c4;
-  --accent: #2c5f2e;
-  --accent2: #e8631a;
+  --bg: #f8f4ee;
+  --panel: #fffcf7;
+  --border: #e8dcc8;
+  --accent: #92400e;
+  --accent2: #b45309;
   --text: #2a2016;
   --muted: #8a7e6e;
-  --card-bg: #faf7f2;
-  --selected: #f0ead8;
+  --card-bg: #faf6ef;
+  --selected: #fef3c7;
   --header-h: 52px;
 }
 
@@ -37,13 +37,13 @@ body {
 }
 
 /* ── Color Themes ── */
-.theme-green  { --accent: #2c5f2e; --accent2: #e8631a; }
-.theme-navy   { --accent: #1a3a5c; --accent2: #c0392b; }
-.theme-earth  { --accent: #5c3d1e; --accent2: #d4870a; }
-.theme-dark   { --accent: #2d2d2d; --accent2: #e74c3c; }
-.theme-red    { --accent: #b71c1c; --accent2: #e65100; }
-.theme-purple { --accent: #4a148c; --accent2: #00897b; }
-.theme-teal   { --accent: #00695c; --accent2: #f57f17; }
+.theme-green  { --accent: #2c5f2e; --accent2: #b45309; }
+.theme-navy   { --accent: #1a3a5c; --accent2: #b45309; }
+.theme-earth  { --accent: #78350f; --accent2: #b45309; }
+.theme-dark   { --accent: #2d2d2d; --accent2: #b45309; }
+.theme-red    { --accent: #b71c1c; --accent2: #b45309; }
+.theme-purple { --accent: #4a148c; --accent2: #b45309; }
+.theme-teal   { --accent: #00695c; --accent2: #b45309; }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -62,10 +62,10 @@ body {
   cursor: pointer;
   transition: all 0.15s;
 }
-.btn-white { background: #fff; color: var(--accent); }
-.btn-white:hover { background: #f0ead8; }
-.btn-orange { background: var(--accent2); color: #fff; }
-.btn-orange:hover { opacity: 0.9; }
+.btn-white { background: #fff; color: #92400e; }
+.btn-white:hover { background: #fef3c7; }
+.btn-orange { background: #b45309; color: #fff; }
+.btn-orange:hover { background: #92400e; }
 .btn-print { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.4); }
 .btn-print:hover { background: rgba(255,255,255,0.25); }
 
@@ -96,8 +96,8 @@ body {
   border: 1px solid transparent;
   margin-bottom: 2px;
 }
-.product-item:hover { background: #f5f0e5; }
-.product-item.selected { background: var(--selected); border-color: #d4c9a8; }
+.product-item:hover { background: #fef8ee; }
+.product-item.selected { background: var(--selected); border-color: #f59e0b; }
 
 /* ── Template Cards ── */
 .template-card {

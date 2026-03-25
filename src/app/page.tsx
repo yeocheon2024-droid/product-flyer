@@ -8,9 +8,9 @@ type Template = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' 
 type Theme = 'green' | 'navy' | 'earth' | 'dark' | 'red' | 'purple' | 'teal';
 
 const THEMES: { id: Theme; color: string; label: string }[] = [
+  { id: 'earth', color: '#78350f', label: '어스' },
   { id: 'green', color: '#2c5f2e', label: '그린' },
   { id: 'navy', color: '#1a3a5c', label: '네이비' },
-  { id: 'earth', color: '#5c3d1e', label: '어스' },
   { id: 'dark', color: '#2d2d2d', label: '다크' },
   { id: 'red', color: '#b71c1c', label: '레드' },
   { id: 'purple', color: '#4a148c', label: '퍼플' },
@@ -462,7 +462,7 @@ export default function FlyerPage() {
 
   // ── Flyer Settings ──
   const [template, setTemplate] = useState<Template>('A');
-  const [theme, setTheme] = useState<Theme>('green');
+  const [theme, setTheme] = useState<Theme>('earth');
   const [companyName, setCompanyName] = useState('지구농산');
   const [subtitle, setSubtitle] = useState('거래처가 믿고 맡길 수 있는 식자재 유통 파트너');
   const [footerNote, setFooterNote] = useState('※ 가격은 부가세 별도입니다. 주문·문의는 담당자에게 연락해 주세요.');
@@ -590,10 +590,11 @@ export default function FlyerPage() {
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* ── Header ── */}
       <header style={{
-        height: '52px', background: 'var(--accent)', display: 'flex', alignItems: 'center',
-        padding: '0 20px', gap: '16px', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-      }} className={`theme-${theme}`}>
-        <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px' }}>전단지 생성기</h1>
+        height: '52px', background: '#78350f', display: 'flex', alignItems: 'center',
+        padding: '0 20px', gap: '12px', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      }}>
+        <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
+        <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
@@ -802,7 +803,7 @@ export default function FlyerPage() {
                     padding: '7px 4px 5px',
                     borderRadius: '4px',
                     border: template === t.id ? '2px solid var(--accent)' : '1px solid var(--border)',
-                    background: template === t.id ? '#f0f7f0' : 'var(--panel)',
+                    background: template === t.id ? '#fef3c7' : 'var(--panel)',
                     cursor: 'pointer',
                     textAlign: 'center',
                     transition: 'all 0.12s',
@@ -821,7 +822,7 @@ export default function FlyerPage() {
                 padding: '7px',
                 borderRadius: '4px',
                 border: template === 'COVER' ? '2px solid var(--accent)' : '1px solid var(--accent2)',
-                background: template === 'COVER' ? '#f0f7f0' : 'var(--panel)',
+                background: template === 'COVER' ? '#fef3c7' : 'var(--panel)',
                 cursor: 'pointer',
                 textAlign: 'center',
                 transition: 'all 0.12s',
@@ -916,7 +917,7 @@ export default function FlyerPage() {
         </div>
 
         {/* ═══ RIGHT PANEL: PREVIEW ═══ */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#ddd' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#e8dcc8' }}>
           {/* Preview Header */}
           <div style={{
             background: 'var(--panel)', borderBottom: '1px solid var(--border)',
@@ -956,9 +957,12 @@ export default function FlyerPage() {
               {template !== 'COVER' ? (
                 <>
                   <div className="flyer-header">
-                    <div>
-                      <div className="flyer-company">{companyName}</div>
-                      <div className="flyer-subtitle">{subtitle}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img src="/logo.png" alt="" style={{ height: '32px', width: '32px' }} />
+                      <div>
+                        <div className="flyer-company">{companyName}</div>
+                        <div className="flyer-subtitle">{subtitle}</div>
+                      </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div className="flyer-tagline">{showPrice ? '납품 가격표' : '품목 안내'}</div>
@@ -1000,9 +1004,12 @@ export default function FlyerPage() {
                 /* COVER TEMPLATE */
                 <>
                   <div className="flyer-header">
-                    <div>
-                      <div className="flyer-company">{companyName}</div>
-                      <div className="flyer-subtitle">{subtitle}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img src="/logo.png" alt="" style={{ height: '32px', width: '32px' }} />
+                      <div>
+                        <div className="flyer-company">{companyName}</div>
+                        <div className="flyer-subtitle">{subtitle}</div>
+                      </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div className="flyer-tagline">회사 소개</div>
