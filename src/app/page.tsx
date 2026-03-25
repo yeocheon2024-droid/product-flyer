@@ -452,13 +452,6 @@ export default function FlyerPage() {
   // ── Export (다중 페이지 지원) ──
   async function captureFlyer(pageEl: HTMLElement, scale: number) {
     const html2canvas = (await import('html2canvas')).default;
-    // 캡처 전: zoom을 1로, 페이지 크기를 원본으로 고정
-    const container = flyerRef.current;
-    const prevTransform = container ? container.style.transform : '';
-    if (container) container.style.transform = 'scale(1)';
-
-    // 렌더링 대기
-    await new Promise(r => setTimeout(r, 200));
 
     const canvas = await html2canvas(pageEl, {
       scale: scale,
@@ -467,8 +460,29 @@ export default function FlyerPage() {
       backgroundColor: '#ffffff',
       logging: false,
       imageTimeout: 15000,
+      width: 794,
+      height: 1123,
+      scrollX: 0,
+      scrollY: 0,
+      onclone: function(clonedDoc: Document, clonedEl: HTMLElement) {
+        // 클론된 요소에서 zoom/transform 제거, 정확한 크기 설정
+        clonedEl.style.width = '794px';
+        clonedEl.style.height = '1123px';
+        clonedEl.style.maxHeight = '1123px';
+        clonedEl.style.transform = 'none';
+        clonedEl.style.overflow = 'hidden';
+        clonedEl.style.boxShadow = 'none';
+        clonedEl.style.position = 'absolute';
+        clonedEl.style.top = '0';
+        clonedEl.style.left = '0';
+        // 부모 컨테이너의 zoom도 제거
+        const parent = clonedEl.parentElement;
+        if (parent) {
+          parent.style.transform = 'none';
+          parent.style.position = 'relative';
+        }
+      }
     });
-    if (container) container.style.transform = prevTransform;
     return canvas;
   }
 
@@ -525,7 +539,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v3.4</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v3.5</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
