@@ -33,33 +33,33 @@ function getScaleVars(count: number, tmpl: Template): React.CSSProperties {
   if (tmpl === 'COVER') return {};
   const vars: Record<string, string> = {};
   if (tmpl === 'A') {
-    if (count <= 4) { vars['--card-img-h'] = '280px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '12px'; }
-    else if (count <= 8) { vars['--card-img-h'] = '200px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '10px'; }
-    else { vars['--card-img-h'] = '160px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '8px'; }
+    if (count <= 4) { vars['--card-img-h'] = '280px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '26px'; vars['--card-gap'] = '12px'; }
+    else if (count <= 8) { vars['--card-img-h'] = '200px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '22px'; vars['--card-gap'] = '10px'; }
+    else { vars['--card-img-h'] = '160px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '8px'; }
   } else if (tmpl === 'B') {
-    if (count <= 8) { vars['--thumb-size'] = '60px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '6px'; }
-    else if (count <= 15) { vars['--thumb-size'] = '44px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '4px'; vars['--card-pad'] = '5px 8px'; }
-    else { vars['--thumb-size'] = '32px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '3px'; vars['--card-pad'] = '4px 6px'; }
+    if (count <= 8) { vars['--thumb-size'] = '60px'; vars['--card-name-fs'] = '13px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '6px'; }
+    else if (count <= 15) { vars['--thumb-size'] = '44px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '16px'; vars['--card-gap'] = '4px'; vars['--card-pad'] = '5px 8px'; }
+    else { vars['--thumb-size'] = '32px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '3px'; vars['--card-pad'] = '4px 6px'; }
   } else if (tmpl === 'C') {
-    if (count <= 6) { vars['--card-img-h'] = '220px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '10px'; }
-    else if (count <= 12) { vars['--card-img-h'] = '160px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '8px'; }
-    else { vars['--card-img-h'] = '120px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '11px'; vars['--card-gap'] = '6px'; }
+    if (count <= 6) { vars['--card-img-h'] = '220px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '10px'; }
+    else if (count <= 12) { vars['--card-img-h'] = '160px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '8px'; }
+    else { vars['--card-img-h'] = '120px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '6px'; }
   } else if (tmpl === 'D') {
-    if (count <= 6) { vars['--thumb-size'] = '120px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '16px'; vars['--card-gap'] = '10px'; }
-    else if (count <= 10) { vars['--thumb-size'] = '90px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '8px'; }
-    else { vars['--thumb-size'] = '70px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '6px'; }
+    if (count <= 6) { vars['--thumb-size'] = '120px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '22px'; vars['--card-gap'] = '10px'; }
+    else if (count <= 10) { vars['--thumb-size'] = '90px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '8px'; }
+    else { vars['--thumb-size'] = '70px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '6px'; }
   } else if (tmpl === 'E') {
-    if (count <= 20) { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '13px'; vars['--card-pad'] = '6px 3px'; }
-    else if (count <= 40) { vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '12px'; vars['--card-pad'] = '4px 3px'; }
-    else { vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '11px'; vars['--card-pad'] = '3px 2px'; vars['--card-spec-fs'] = '9px'; }
+    if (count <= 20) { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '14px'; vars['--card-pad'] = '6px 3px'; }
+    else if (count <= 40) { vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '13px'; vars['--card-pad'] = '4px 3px'; }
+    else { vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '12px'; vars['--card-pad'] = '3px 2px'; vars['--card-spec-fs'] = '9px'; }
   } else if (tmpl === 'F') {
-    if (count <= 2) { vars['--card-img-h'] = '380px'; vars['--card-name-fs'] = '18px'; vars['--card-price-fs'] = '24px'; vars['--card-gap'] = '14px'; }
-    else if (count <= 4) { vars['--card-img-h'] = '260px'; vars['--card-name-fs'] = '15px'; vars['--card-price-fs'] = '20px'; vars['--card-gap'] = '12px'; }
-    else { vars['--card-img-h'] = '180px'; vars['--card-name-fs'] = '13px'; vars['--card-price-fs'] = '17px'; vars['--card-gap'] = '10px'; }
+    if (count <= 2) { vars['--card-img-h'] = '380px'; vars['--card-name-fs'] = '18px'; vars['--card-price-fs'] = '32px'; vars['--card-gap'] = '14px'; }
+    else if (count <= 4) { vars['--card-img-h'] = '260px'; vars['--card-name-fs'] = '15px'; vars['--card-price-fs'] = '28px'; vars['--card-gap'] = '12px'; }
+    else { vars['--card-img-h'] = '180px'; vars['--card-name-fs'] = '13px'; vars['--card-price-fs'] = '22px'; vars['--card-gap'] = '10px'; }
   } else if (tmpl === 'L') {
     if (count <= 10) { vars['--card-name-fs'] = '13px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '0px'; vars['--card-pad'] = '10px 14px'; }
     else if (count <= 20) { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '0px'; vars['--card-pad'] = '8px 14px'; }
-    else { vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '12px'; vars['--card-gap'] = '0px'; vars['--card-pad'] = '6px 14px'; }
+    else { vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '0px'; vars['--card-pad'] = '6px 14px'; }
   }
   return vars as React.CSSProperties;
 }
@@ -490,7 +490,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.3</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v2.4</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
