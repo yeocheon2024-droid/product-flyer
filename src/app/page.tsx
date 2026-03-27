@@ -459,10 +459,10 @@ export default function FlyerPage() {
   // 템플릿별 페이지당 최대 품목 수 (A4 실측 기준)
   // 가용높이 ~976px = 1123 - header(70) - footer(45) - bodyPad(32)
   const TEMPLATE_MAX: Record<Template, number> = {
-    A: 12,    // 2col × 6row, tall portrait cards
-    B: 18,    // list rows
-    C: 18,    // 3col × 6row, portrait cards
-    D: 18,    // 2col × 9row, horizontal cards with portrait image
+    A: 8,     // 2col × 4row
+    B: 16,    // list rows
+    C: 12,    // 3col × 4row
+    D: 14,    // 2col × 7row, horizontal cards
     E: 50,    // 2col compact table
     F: 3,     // 1col large showcase cards
     L: 25,    // table rows
