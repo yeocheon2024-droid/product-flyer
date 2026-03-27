@@ -33,9 +33,11 @@ function getScaleVars(count: number, tmpl: Template): React.CSSProperties {
   if (tmpl === 'COVER') return {};
   const vars: Record<string, string> = {};
   if (tmpl === 'A') {
-    if (count <= 4) { vars['--card-img-h'] = '280px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '26px'; vars['--card-gap'] = '12px'; }
-    else if (count <= 8) { vars['--card-img-h'] = '200px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '22px'; vars['--card-gap'] = '10px'; }
-    else { vars['--card-img-h'] = '160px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '8px'; }
+    if (count <= 4) { vars['--card-img-h'] = '260px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '26px'; vars['--card-gap'] = '10px'; }
+    else if (count <= 6) { vars['--card-img-h'] = '200px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '22px'; vars['--card-gap'] = '8px'; }
+    else if (count <= 8) { vars['--card-img-h'] = '155px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '20px'; vars['--card-gap'] = '6px'; }
+    else if (count <= 10) { vars['--card-img-h'] = '120px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '6px'; }
+    else { vars['--card-img-h'] = '100px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '16px'; vars['--card-gap'] = '5px'; }
   } else if (tmpl === 'B') {
     if (count <= 8) { vars['--thumb-size'] = '60px'; vars['--card-name-fs'] = '13px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '6px'; }
     else if (count <= 15) { vars['--thumb-size'] = '44px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '16px'; vars['--card-gap'] = '4px'; vars['--card-pad'] = '5px 8px'; }
@@ -1018,7 +1020,7 @@ export default function FlyerPage() {
                     <div className={`flyer-a4 theme-${theme}`}>
                       <div className="flyer-header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src="/logo.png" alt="" style={{ height: '32px', width: '32px' }} />
+                          <img src="/logo.png" alt="" style={{ height: '38px', width: '38px' }} />
                           <div>
                             <div className="flyer-company">{companyName}</div>
                             <div className="flyer-subtitle">{subtitle}</div>
@@ -1054,7 +1056,7 @@ export default function FlyerPage() {
                     <div className={`flyer-a4 theme-${theme}`}>
                       <div className="flyer-header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src="/logo.png" alt="" style={{ height: '32px', width: '32px' }} />
+                          <img src="/logo.png" alt="" style={{ height: '38px', width: '38px' }} />
                           <div>
                             <div className="flyer-company">{companyName}</div>
                             <div className="flyer-subtitle">{subtitle}</div>
@@ -1093,7 +1095,7 @@ export default function FlyerPage() {
                     {/* Header */}
                     <div className="flyer-header">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <img src="/logo.png" alt="" style={{ height: '32px', width: '32px' }} />
+                        <img src="/logo.png" alt="" style={{ height: '38px', width: '38px' }} />
                         <div>
                           <div className="flyer-company">{companyName}</div>
                           <div className="flyer-subtitle">{subtitle}</div>
