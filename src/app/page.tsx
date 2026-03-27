@@ -318,7 +318,7 @@ export default function FlyerPage() {
   const [theme, setTheme] = useState<Theme>('earth');
   const [companyName, setCompanyName] = useState('지구농산');
   const [subtitle, setSubtitle] = useState('거래처가 믿고 맡길 수 있는 식자재 유통 파트너');
-  const [footerNote, setFooterNote] = useState('※ 가격은 부가세 별도입니다. 주문·문의는 담당자에게 연락해 주세요.');
+  const [footerNote, setFooterNote] = useState('※ 가격은 부가세 포함입니다. 주문·문의는 담당자에게 연락해 주세요.');
   const CONTACTS = [
     { id: 0, label: '대표', number: '1566-1521' },
     { id: 1, label: '1번', number: '010-4478-5533' },
