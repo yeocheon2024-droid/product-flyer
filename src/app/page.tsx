@@ -44,12 +44,14 @@ function getScaleVars(count: number, tmpl: Template): React.CSSProperties {
     else { vars['--thumb-size'] = '32px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '3px'; vars['--card-pad'] = '4px 6px'; }
   } else if (tmpl === 'C') {
     if (count <= 6) { vars['--card-img-h'] = '200px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '10px'; }
-    else if (count <= 12) { vars['--card-img-h'] = '120px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '6px'; }
-    else { vars['--card-img-h'] = '85px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '4px'; }
+    else if (count <= 9) { vars['--card-img-h'] = '140px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '6px'; }
+    else if (count <= 12) { vars['--card-img-h'] = '100px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '5px'; }
+    else { vars['--card-img-h'] = '75px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '4px'; }
   } else if (tmpl === 'D') {
     if (count <= 6) { vars['--thumb-size'] = '120px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '22px'; vars['--card-gap'] = '10px'; }
-    else if (count <= 10) { vars['--thumb-size'] = '90px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '8px'; }
-    else { vars['--thumb-size'] = '70px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '6px'; }
+    else if (count <= 10) { vars['--thumb-size'] = '90px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '6px'; }
+    else if (count <= 14) { vars['--thumb-size'] = '70px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '4px'; }
+    else { vars['--thumb-size'] = '55px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '3px'; }
   } else if (tmpl === 'E') {
     if (count <= 20) { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '14px'; vars['--card-pad'] = '6px 3px'; }
     else if (count <= 40) { vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '13px'; vars['--card-pad'] = '4px 3px'; }
@@ -459,10 +461,10 @@ export default function FlyerPage() {
   // 템플릿별 페이지당 최대 품목 수 (A4 실측 기준)
   // 가용높이 ~976px = 1123 - header(70) - footer(45) - bodyPad(32)
   const TEMPLATE_MAX: Record<Template, number> = {
-    A: 8,     // 2col × 4row
-    B: 16,    // list rows
-    C: 12,    // 3col × 4row
-    D: 14,    // 2col × 7row, horizontal cards
+    A: 10,    // 2col × 5row
+    B: 18,    // list rows
+    C: 15,    // 3col × 5row
+    D: 18,    // 2col × 9row, horizontal cards
     E: 50,    // 2col compact table
     F: 3,     // 1col large showcase cards
     L: 25,    // table rows
