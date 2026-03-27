@@ -1024,9 +1024,12 @@ export default function FlyerPage() {
                             <div className="flyer-subtitle">{subtitle}</div>
                           </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div className="flyer-tagline">{template === 'COVER' ? '회사 소개' : (showPrice ? '납품 가격표' : '품목 안내')}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ textAlign: 'right' }}>
+                            <div className="flyer-tagline">{template === 'COVER' ? '회사 소개' : (showPrice ? '납품 가격표' : '품목 안내')}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
+                          </div>
+                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://product-catalog-4qg.pages.dev" alt="QR" style={{ width: '40px', height: '40px' }} />
                         </div>
                       </div>
                       <div className="flyer-body">
@@ -1057,9 +1060,12 @@ export default function FlyerPage() {
                             <div className="flyer-subtitle">{subtitle}</div>
                           </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div className="flyer-tagline">회사 소개</div>
-                          <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ textAlign: 'right' }}>
+                            <div className="flyer-tagline">회사 소개</div>
+                            <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
+                          </div>
+                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://product-catalog-4qg.pages.dev" alt="QR" style={{ width: '40px', height: '40px' }} />
                         </div>
                       </div>
                       <RenderCover products={selectedProducts} showPrice={showPrice} settings={coverSettings} />
@@ -1093,9 +1099,12 @@ export default function FlyerPage() {
                           <div className="flyer-subtitle">{subtitle}</div>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div className="flyer-tagline">{showPrice ? '납품 가격표' : '품목 안내'}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <div className="flyer-tagline">{showPrice ? '납품 가격표' : '품목 안내'}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
+                        </div>
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://product-catalog-4qg.pages.dev" alt="QR" style={{ width: '40px', height: '40px' }} />
                       </div>
                     </div>
 
