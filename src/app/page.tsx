@@ -310,6 +310,7 @@ export default function FlyerPage() {
   const [activeMinor, setActiveMinor] = useState('전체');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
   const [showNoSell, setShowNoSell] = useState(false);
 
@@ -391,27 +392,56 @@ export default function FlyerPage() {
     return matchCat && matchMinor && matchSearch;
   });
 
-  // ── Selected Products (maintain order) ──
-  const selectedProducts = products
-    .filter(p => selected.has(p.code))
+  // ── Selected Products (순서 배열 기반) ──
+  const selectedProducts = selectedOrder
+    .map(code => products.find(p => p.code === code))
+    .filter((p): p is Product => !!p && selected.has(p.code))
     .map(p => ({ ...p, name: nameOverrides[p.code] || p.name }));
 
   // ── Actions ──
   function toggleSelect(code: string) {
     setSelected(prev => {
       const next = new Set(prev);
-      next.has(code) ? next.delete(code) : next.add(code);
+      if (next.has(code)) {
+        next.delete(code);
+        setSelectedOrder(ord => ord.filter(c => c !== code));
+      } else {
+        next.add(code);
+        setSelectedOrder(ord => [...ord, code]);
+      }
       return next;
     });
   }
   function selectAllFiltered() {
     setSelected(prev => {
       const next = new Set(prev);
-      filtered.forEach(p => next.add(p.code));
+      const newCodes: string[] = [];
+      filtered.forEach(p => {
+        if (!next.has(p.code)) newCodes.push(p.code);
+        next.add(p.code);
+      });
+      if (newCodes.length > 0) setSelectedOrder(ord => [...ord, ...newCodes]);
       return next;
     });
   }
-  function clearAll() { setSelected(new Set()); }
+  function clearAll() { setSelected(new Set()); setSelectedOrder([]); }
+
+  function moveItem(code: string, direction: 'up' | 'down') {
+    setSelectedOrder(prev => {
+      const idx = prev.indexOf(code);
+      if (idx === -1) return prev;
+      const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
+      return next;
+    });
+  }
+
+  function removeItem(code: string) {
+    setSelected(prev => { const next = new Set(prev); next.delete(code); return next; });
+    setSelectedOrder(ord => ord.filter(c => c !== code));
+  }
 
   function openEditModal(code: string, currentName: string) {
     setEditModal({ code, original: currentName });
@@ -741,6 +771,27 @@ export default function FlyerPage() {
               </div>
             )}
           </div>
+
+          {/* 순서 변경 */}
+          {selectedProducts.length > 0 && (
+            <div>
+              <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '6px' }}>품목 순서</h3>
+              <div style={{ maxHeight: '200px', overflowY: 'auto', borderRadius: '6px', border: '1px solid var(--border)', background: '#fff' }}>
+                {selectedProducts.map((p, idx) => (
+                  <div key={p.code} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 6px', borderBottom: '1px solid #f0ebe3', fontSize: '11px' }}>
+                    <span style={{ color: 'var(--muted)', fontWeight: 700, width: '16px', textAlign: 'center', flexShrink: 0 }}>{idx + 1}</span>
+                    <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                    <button onClick={() => moveItem(p.code, 'up')} disabled={idx === 0}
+                      style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', padding: '0 2px', fontSize: '12px', color: idx === 0 ? '#ddd' : '#888' }}>▲</button>
+                    <button onClick={() => moveItem(p.code, 'down')} disabled={idx === selectedProducts.length - 1}
+                      style={{ background: 'none', border: 'none', cursor: idx === selectedProducts.length - 1 ? 'default' : 'pointer', padding: '0 2px', fontSize: '12px', color: idx === selectedProducts.length - 1 ? '#ddd' : '#888' }}>▼</button>
+                    <button onClick={() => removeItem(p.code)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', fontSize: '12px', color: '#d32f2f' }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Templates - Compact Grid */}
           <div>
