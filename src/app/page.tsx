@@ -41,9 +41,9 @@ function getScaleVars(count: number, tmpl: Template): React.CSSProperties {
     else if (count <= 15) { vars['--thumb-size'] = '44px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '16px'; vars['--card-gap'] = '4px'; vars['--card-pad'] = '5px 8px'; }
     else { vars['--thumb-size'] = '32px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '3px'; vars['--card-pad'] = '4px 6px'; }
   } else if (tmpl === 'C') {
-    if (count <= 6) { vars['--card-img-h'] = '220px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '10px'; }
-    else if (count <= 12) { vars['--card-img-h'] = '160px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '8px'; }
-    else { vars['--card-img-h'] = '120px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '6px'; }
+    if (count <= 6) { vars['--card-img-h'] = '200px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '10px'; }
+    else if (count <= 12) { vars['--card-img-h'] = '120px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '6px'; }
+    else { vars['--card-img-h'] = '85px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '4px'; }
   } else if (tmpl === 'D') {
     if (count <= 6) { vars['--thumb-size'] = '120px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '22px'; vars['--card-gap'] = '10px'; }
     else if (count <= 10) { vars['--thumb-size'] = '90px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '8px'; }
@@ -91,7 +91,7 @@ function RenderTemplateA({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-a" style={getScaleVars(products.length, 'A')}>
       {products.map((p, i) => (
         <div key={i} className="card-a">
-          <ProductImg product={p} className="card-img" style={{ width: '100%', height: 'var(--card-img-h, 200px)', objectFit: 'contain', background: '#fff', aspectRatio: '1/1' }} />
+          <ProductImg product={p} className="card-img" style={{ width: '100%', height: 'var(--card-img-h, 200px)', objectFit: 'contain', background: '#fff' }} />
           <div className="card-body">
             <div className="card-name">{p.name}</div>
             {p.spec && <div className="card-spec">{p.spec}</div>}
@@ -126,7 +126,7 @@ function RenderTemplateC({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-c" style={getScaleVars(products.length, 'C')}>
       {products.map((p, i) => (
         <div key={i} className="card-c">
-          <ProductImg product={p} className="c-img" style={{ width: '100%', height: 'var(--card-img-h, 180px)', objectFit: 'contain', background: '#fff', aspectRatio: '1/1' }} />
+          <ProductImg product={p} className="c-img" style={{ width: '100%', height: 'var(--card-img-h, 180px)', objectFit: 'contain', background: '#fff' }} />
           <div className="c-body">
             <div className="c-name">{p.name}</div>
             {p.spec && <div className="c-spec">{p.spec}</div>}
@@ -143,7 +143,7 @@ function RenderTemplateD({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-d" style={getScaleVars(products.length, 'D')}>
       {products.map((p, i) => (
         <div key={i} className="card-d">
-          <ProductImg product={p} className="d-img" style={{ width: 'var(--thumb-size, 100px)', height: 'calc(var(--thumb-size, 100px) * 1.3)', objectFit: 'contain', background: '#fff', aspectRatio: '3/4' }} />
+          <ProductImg product={p} className="d-img" style={{ width: 'var(--thumb-size, 100px)', height: 'calc(var(--thumb-size, 100px) * 1.3)', objectFit: 'contain', background: '#fff' }} />
           <div className="d-body">
             <div>
               <div className="d-name">{p.name}</div>
@@ -193,7 +193,7 @@ function RenderTemplateF({ products, showPrice }: { products: Product[]; showPri
     <div className="grid-f" style={getScaleVars(products.length, 'F')}>
       {products.map((p, i) => (
         <div key={i} className="card-f">
-          <ProductImg product={p} className="f-img" style={{ width: '45%', height: 'var(--card-img-h, 260px)', objectFit: 'contain', background: '#fff', aspectRatio: '1/1' }} />
+          <ProductImg product={p} className="f-img" style={{ width: '45%', height: 'var(--card-img-h, 260px)', objectFit: 'contain', background: '#fff' }} />
           <div className="f-body">
             <div className="f-name">{p.name}</div>
             {p.spec && <div className="f-spec">{p.spec}</div>}
