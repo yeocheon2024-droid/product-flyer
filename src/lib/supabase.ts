@@ -24,6 +24,7 @@ export interface Product {
   sell: number;
   registered_at: string;
   image_url?: string;
+  display_name?: string;
 }
 
 export function getImageUrl(product: Product): string | null {

@@ -392,7 +392,7 @@ export default function FlyerPage() {
     const matchCat = activeCategory === '전체' || p.major_name === activeCategory;
     const matchMinor = activeMinor === '전체' || p.minor_name === activeMinor;
     const q = search.toLowerCase();
-    const matchSearch = !q || p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
+    const matchSearch = !q || p.name.toLowerCase().includes(q) || (p.display_name || '').toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
     return matchCat && matchMinor && matchSearch;
   });
 
@@ -400,7 +400,7 @@ export default function FlyerPage() {
   const selectedProducts = selectedOrder
     .map(code => products.find(p => p.code === code))
     .filter((p): p is Product => !!p && selected.has(p.code))
-    .map(p => ({ ...p, name: nameOverrides[p.code] || p.name }));
+    .map(p => ({ ...p, name: nameOverrides[p.code] || p.display_name || p.name }));
 
   // ── Actions ──
   function toggleSelect(code: string) {
@@ -741,7 +741,7 @@ export default function FlyerPage() {
                         onClick={e => { e.stopPropagation(); openEditModal(p.code, p.name); }}
                         title="클릭하여 품목명 수정"
                       >
-                        {nameOverrides[p.code] || p.name}
+                        {nameOverrides[p.code] || p.display_name || p.name}
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{p.spec}</div>
                     </div>
