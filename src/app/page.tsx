@@ -320,6 +320,7 @@ export default function FlyerPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
   const [showNoSell, setShowNoSell] = useState(false);
 
   // ── Flyer Settings ──
@@ -369,6 +370,8 @@ export default function FlyerPage() {
   // ── Edit Modal ──
   const [editModal, setEditModal] = useState<{ code: string; original: string } | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [priceEditModal, setPriceEditModal] = useState<{ code: string; name: string; original: number } | null>(null);
+  const [priceEditValue, setPriceEditValue] = useState('');
 
   const flyerRef = useRef<HTMLDivElement>(null);
 
@@ -404,7 +407,11 @@ export default function FlyerPage() {
   const selectedProducts = selectedOrder
     .map(code => products.find(p => p.code === code))
     .filter((p): p is Product => !!p && selected.has(p.code))
-    .map(p => ({ ...p, name: nameOverrides[p.code] || p.display_name || p.name }));
+    .map(p => ({
+      ...p,
+      name: nameOverrides[p.code] || p.display_name || p.name,
+      sell: priceOverrides[p.code] ?? p.sell,
+    }));
 
   // ── Actions ──
   function toggleSelect(code: string) {
@@ -460,6 +467,24 @@ export default function FlyerPage() {
     setNameOverrides(prev => ({ ...prev, [editModal.code]: editValue }));
     setEditModal(null);
     showToast('품목명이 수정되었습니다');
+  }
+
+  function openPriceEdit(code: string, name: string, currentSell: number) {
+    setPriceEditModal({ code, name, original: currentSell });
+    setPriceEditValue(String(priceOverrides[code] ?? currentSell));
+  }
+  function confirmPriceEdit() {
+    if (!priceEditModal) return;
+    const val = parseInt(priceEditValue.replace(/[^0-9]/g, ''), 10);
+    if (!isNaN(val) && val > 0) {
+      setPriceOverrides(prev => ({ ...prev, [priceEditModal.code]: val }));
+      showToast('가격이 수정되었습니다 (전단지용)');
+    }
+    setPriceEditModal(null);
+  }
+  function resetPrice(code: string) {
+    setPriceOverrides(prev => { const next = { ...prev }; delete next[code]; return next; });
+    showToast('원래 가격으로 복원되었습니다');
   }
 
   // 템플릿별 페이지당 최대 품목 수 (A4 실측 기준)
@@ -749,8 +774,12 @@ export default function FlyerPage() {
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{p.spec}</div>
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent2)', whiteSpace: 'nowrap' }}>
-                      {formatPrice(p.sell)}
+                    <div
+                      style={{ fontSize: '13px', fontWeight: 700, color: priceOverrides[p.code] != null ? '#d32f2f' : 'var(--accent2)', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: priceOverrides[p.code] != null ? 'underline' : 'none' }}
+                      onClick={e => { e.stopPropagation(); openPriceEdit(p.code, p.name, p.sell); }}
+                      title="클릭하여 전단지용 가격 수정"
+                    >
+                      {formatPrice(priceOverrides[p.code] ?? p.sell)}
                     </div>
                   </div>
                 );
@@ -789,6 +818,13 @@ export default function FlyerPage() {
                   <div key={p.code} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 6px', borderBottom: '1px solid #f0ebe3', fontSize: '11px' }}>
                     <span style={{ color: 'var(--muted)', fontWeight: 700, width: '16px', textAlign: 'center', flexShrink: 0 }}>{idx + 1}</span>
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                    <span
+                      style={{ fontSize: '10px', fontWeight: 700, color: priceOverrides[p.code] != null ? '#d32f2f' : 'var(--muted)', cursor: 'pointer', flexShrink: 0 }}
+                      onClick={() => openPriceEdit(p.code, p.name, products.find(op => op.code === p.code)?.sell || p.sell)}
+                      title="가격 수정"
+                    >
+                      {formatPrice(p.sell).replace('원', '')}
+                    </span>
                     <button onClick={() => moveItem(p.code, 'up')} disabled={idx === 0}
                       style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', padding: '0 2px', fontSize: '12px', color: idx === 0 ? '#ddd' : '#888' }}>▲</button>
                     <button onClick={() => moveItem(p.code, 'down')} disabled={idx === selectedProducts.length - 1}
@@ -1164,6 +1200,50 @@ export default function FlyerPage() {
                 확인
               </button>
               <button onClick={() => setEditModal(null)}
+                style={{ flex: 1, background: '#f0ede8', color: 'var(--text)', border: 'none', borderRadius: '6px', padding: '9px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Price Edit Modal ── */}
+      {priceEditModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setPriceEditModal(null)}
+        >
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px 28px', width: '360px', boxShadow: '0 8px 40px rgba(0,0,0,0.2)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '14px', fontWeight: 800, marginBottom: '4px' }}>전단지용 가격 수정</div>
+            <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px' }}>{priceEditModal.name}</div>
+            <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '14px' }}>DB 원가: {formatPrice(priceEditModal.original)} (변경되지 않음)</div>
+            <input
+              value={priceEditValue}
+              onChange={e => setPriceEditValue(e.target.value.replace(/[^0-9]/g, ''))}
+              onKeyDown={e => { if (e.key === 'Enter') confirmPriceEdit(); if (e.key === 'Escape') setPriceEditModal(null); }}
+              autoFocus
+              placeholder="가격 입력 (숫자만)"
+              style={{ width: '100%', border: '2px solid var(--accent)', borderRadius: '6px', padding: '8px 12px', fontSize: '14px', fontWeight: 600, outline: 'none', boxSizing: 'border-box' }}
+            />
+            {priceEditValue && (
+              <div style={{ fontSize: '12px', color: 'var(--accent2)', fontWeight: 700, marginTop: '6px' }}>
+                {parseInt(priceEditValue).toLocaleString('ko-KR')}원
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
+              <button onClick={confirmPriceEdit}
+                style={{ flex: 1, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', padding: '9px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                확인
+              </button>
+              {priceOverrides[priceEditModal.code] != null && (
+                <button onClick={() => { resetPrice(priceEditModal.code); setPriceEditModal(null); }}
+                  style={{ flex: 1, background: '#fff3f3', color: '#d32f2f', border: '1px solid #fecaca', borderRadius: '6px', padding: '9px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                  원래가격
+                </button>
+              )}
+              <button onClick={() => setPriceEditModal(null)}
                 style={{ flex: 1, background: '#f0ede8', color: 'var(--text)', border: 'none', borderRadius: '6px', padding: '9px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
                 취소
               </button>
