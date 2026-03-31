@@ -30,6 +30,11 @@ export interface Product {
 export function getImageUrl(product: Product): string | null {
   if (product.image_url) {
     const url = product.image_url;
+    // 이전 Supabase Storage URL → R2로 변환
+    if (url.includes('supabase') && url.includes('product-images')) {
+      const filename = url.split('/').pop()?.split('?')[0];
+      return `${STORAGE_URL}/${filename}`;
+    }
     if (url.startsWith('http') && !url.includes('supabase')) {
       return `https://wsrv.nl/?url=${encodeURIComponent(url)}&output=webp`;
     }
