@@ -5,7 +5,7 @@ const supabaseKey = 'sb_publishable_SsIL-yhXCilGv7XZXo963Q_PYpeeG83';
 
 export const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null as any;
 
-export const STORAGE_URL = `${supabaseUrl}/storage/v1/object/public/product-images`;
+export const STORAGE_URL = 'https://pub-b2fb7e97bfae4e7f96db58f188aa1ce7.r2.dev';
 
 export interface Product {
   code: string;
