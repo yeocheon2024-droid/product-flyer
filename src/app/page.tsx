@@ -126,11 +126,15 @@ function RenderTemplateB({ products, showPrice }: { products: Product[]; showPri
 }
 
 function RenderTemplateC({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
+  const rows = Math.ceil(products.length / 3);
   return (
-    <div className="grid-c" style={getScaleVars(products.length, 'C')}>
+    <div className="grid-c" style={{
+      ...getScaleVars(products.length, 'C'),
+      gridTemplateRows: `repeat(${rows}, 1fr)`,
+    }}>
       {products.map((p, i) => (
         <div key={i} className="card-c">
-          <ProductImg product={p} className="c-img" style={{ width: '100%', height: 'var(--card-img-h, 180px)', objectFit: 'contain', background: '#fff' }} />
+          <ProductImg product={p} className="c-img" style={{ width: '100%', objectFit: 'contain', background: '#fff' }} />
           <div className="c-body">
             <div className="c-name">{p.name}</div>
             {p.spec && <div className="c-spec">{p.spec}</div>}

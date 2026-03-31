@@ -279,20 +279,20 @@ body {
   grid-template-columns: repeat(3, 1fr);
   gap: var(--card-gap, 10px);
   height: 100%;
-  align-content: start;
 }
 .card-c {
   border: 1px solid #e8e4de; border-radius: 7px;
   overflow: hidden; background: #fafaf8;
   display: flex; flex-direction: column;
+  min-height: 0;
 }
-.card-c .c-img { width: 100%; height: var(--card-img-h, 120px); object-fit: contain; display: block; background: #fff; flex-shrink: 0; }
+.card-c .c-img { width: 100%; flex: 1 1 0; min-height: 0; object-fit: contain; display: block; background: #fff; }
 .card-c .c-img-ph {
-  width: 100%; height: var(--card-img-h, 180px); min-height: 0;
+  width: 100%; min-height: 0;
   background: linear-gradient(135deg, #e8e4de, #d8d2c8);
   display: flex; align-items: center; justify-content: center;
-  font-size: calc(var(--card-img-h, 180px) * 0.25);
-  flex: 1 1 auto;
+  font-size: 20px;
+  flex: 1 1 0;
 }
 .card-c .c-body { padding: var(--card-pad, 6px 8px 8px); flex-shrink: 0; display: flex; flex-direction: column; }
 .card-c .c-name { font-size: var(--card-name-fs, 11px); font-weight: 800; color: #222; letter-spacing: -0.3px; }
@@ -596,7 +596,6 @@ body {
 
   /* 그리드 인쇄 최적화 */
   #printArea .grid-a,
-  #printArea .grid-c,
   #printArea .grid-d {
     height: auto !important;
   }
