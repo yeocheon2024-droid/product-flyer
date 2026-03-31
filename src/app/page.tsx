@@ -83,7 +83,7 @@ function ProductImg({ product, className, style }: { product: Product; className
   const [err, setErr] = useState(false);
   const url = getImageUrl(product);
   if (!url || err) return <div className={className} style={{ ...style, color: '#ccc', fontSize: '11px', fontWeight: 600, letterSpacing: '-0.3px' }}>No img</div>;
-  return <img src={url} alt={product.name} crossOrigin="anonymous" onError={() => setErr(true)} className={className} style={style} />;
+  return <img src={url} alt={product.name} onError={() => setErr(true)} className={className} style={style} />;
 }
 
 // ══════════════════════════════════════
