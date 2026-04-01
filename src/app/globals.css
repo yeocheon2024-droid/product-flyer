@@ -542,16 +542,18 @@ body {
 @media print {
   @page { margin: 0; size: A4 portrait; }
 
-  /* 전체 숨기고 인쇄 영역만 표시 */
-  body { background: #fff !important; }
-  body > * { display: none !important; }
+  /* visibility 방식: display:none은 자식까지 차단하지만 visibility:hidden은 자식이 override 가능 */
+  body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
+  body * { visibility: hidden; }
+  #printArea, #printArea * { visibility: visible; }
+
   #printArea {
-    display: block !important;
-    transform: none !important;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     width: 210mm;
+    transform: none !important;
+    z-index: 99999;
   }
 
   /* A4 페이지 설정 */
@@ -566,43 +568,49 @@ body {
     break-after: page;
     margin: 0 !important;
     overflow: hidden;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   #printArea .flyer-a4:last-child {
     page-break-after: avoid;
     break-after: avoid;
   }
 
-  /* 인쇄 시 letter-spacing 리셋 (글자 겹침 방지) */
-  #printArea * {
-    letter-spacing: 0 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  /* 인쇄 색상 보존 */
+  #printArea, #printArea * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  /* 폰트 인쇄 안정화 */
-  #printArea .flyer-header,
-  #printArea .flyer-footer,
-  #printArea .flyer-body {
-    font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', sans-serif !important;
-  }
-
-  /* 회사명 인쇄 안정화 */
+  /* 회사명만 letter-spacing 리셋 (전체 리셋은 텍스트 잘림 유발) */
   #printArea .flyer-company {
     font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', sans-serif !important;
     letter-spacing: 0 !important;
+  }
+
+  /* 이미지 인쇄 보장 */
+  #printArea img {
+    display: block !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* 카드 내부 텍스트 잘림 방지 */
+  #printArea .card-name, #printArea .card-price,
+  #printArea .b-name, #printArea .b-price,
+  #printArea .c-name, #printArea .c-price,
+  #printArea .d-name, #printArea .d-price,
+  #printArea .e-name, #printArea .e-price,
+  #printArea .f-name, #printArea .f-price,
+  #printArea .l-cell-name, #printArea .l-price-val,
+  #printArea .cc-name, #printArea .cc-price {
+    overflow: visible !important;
+    text-overflow: clip !important;
   }
 
   /* 그리드 인쇄 최적화 */
   #printArea .grid-a,
   #printArea .grid-d {
     height: auto !important;
-  }
-
-  /* 이미지 인쇄 */
-  #printArea img {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
   }
 }
