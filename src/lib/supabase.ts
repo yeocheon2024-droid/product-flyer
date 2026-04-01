@@ -25,6 +25,7 @@ export interface Product {
   registered_at: string;
   image_url?: string;
   display_name?: string;
+  sold_out?: boolean;
 }
 
 export function getImageUrl(product: Product): string | null {

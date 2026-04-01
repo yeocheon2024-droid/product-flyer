@@ -86,6 +86,38 @@ function ProductImg({ product, className, style }: { product: Product; className
   return <img src={url} alt={product.name} onError={() => setErr(true)} className={className} style={style} />;
 }
 
+// ── 품절 오버레이 (이미지 위에 겹치는 반투명 오버레이) ──
+function SoldOutOverlay() {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5,
+      borderRadius: 'inherit',
+    }}>
+      <span style={{
+        background: '#dc2626', color: '#fff', fontSize: '11px', fontWeight: 900,
+        padding: '3px 10px', borderRadius: '10px', letterSpacing: '1px',
+      }}>품절</span>
+    </div>
+  );
+}
+
+// ── 품절 배지 (작은 이미지 위에 겹치는 작은 배지) ──
+function SoldOutBadge() {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5,
+      borderRadius: '5px',
+    }}>
+      <span style={{
+        background: '#dc2626', color: '#fff', fontSize: '8px', fontWeight: 900,
+        padding: '1px 5px', borderRadius: '6px', letterSpacing: '0.5px',
+      }}>품절</span>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════
 // TEMPLATE RENDERERS
 // ══════════════════════════════════════
@@ -94,12 +126,13 @@ function RenderTemplateA({ products, showPrice }: { products: Product[]; showPri
   return (
     <div className="grid-a" style={getScaleVars(products.length, 'A')}>
       {products.map((p, i) => (
-        <div key={i} className="card-a">
+        <div key={i} className="card-a" style={{ position: 'relative' }}>
           <ProductImg product={p} className="card-img" style={{ width: '100%', height: 'var(--card-img-h, 200px)', objectFit: 'contain', background: '#fff' }} />
+          {p.sold_out && <SoldOutOverlay />}
           <div className="card-body">
             <div className="card-name">{p.name}</div>
             {p.spec && <div className="card-spec">{p.spec}</div>}
-            {showPrice && <div className="card-price">{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+            {showPrice && <div className="card-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
           </div>
         </div>
       ))}
@@ -111,14 +144,17 @@ function RenderTemplateB({ products, showPrice }: { products: Product[]; showPri
   return (
     <div className="grid-b" style={getScaleVars(products.length, 'B')}>
       {products.map((p, i) => (
-        <div key={i} className="card-b">
+        <div key={i} className="card-b" style={{ position: 'relative' }}>
           <div className="b-num">{i + 1}</div>
-          <ProductImg product={p} className="b-img" style={{ width: 'var(--thumb-size, 60px)', height: 'var(--thumb-size, 60px)', borderRadius: '5px', objectFit: 'cover' }} />
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <ProductImg product={p} className="b-img" style={{ width: 'var(--thumb-size, 60px)', height: 'var(--thumb-size, 60px)', borderRadius: '5px', objectFit: 'cover' }} />
+            {p.sold_out && <SoldOutBadge />}
+          </div>
           <div className="b-info">
             <div className="b-name">{p.name}</div>
             {p.spec && <div className="b-spec">{p.spec}</div>}
           </div>
-          {showPrice && <div className="b-price">{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+          {showPrice && <div className="b-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
         </div>
       ))}
     </div>
@@ -133,12 +169,13 @@ function RenderTemplateC({ products, showPrice }: { products: Product[]; showPri
       gridTemplateRows: `repeat(${rows}, 1fr)`,
     }}>
       {products.map((p, i) => (
-        <div key={i} className="card-c">
+        <div key={i} className="card-c" style={{ position: 'relative' }}>
           <ProductImg product={p} className="c-img" style={{ width: '100%', objectFit: 'contain', background: '#fff' }} />
+          {p.sold_out && <SoldOutOverlay />}
           <div className="c-body">
             <div className="c-name">{p.name}</div>
             {p.spec && <div className="c-spec">{p.spec}</div>}
-            {showPrice && <div className="c-price">{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+            {showPrice && <div className="c-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
           </div>
         </div>
       ))}
@@ -150,14 +187,17 @@ function RenderTemplateD({ products, showPrice }: { products: Product[]; showPri
   return (
     <div className="grid-d" style={getScaleVars(products.length, 'D')}>
       {products.map((p, i) => (
-        <div key={i} className="card-d">
-          <ProductImg product={p} className="d-img" style={{ width: 'var(--thumb-size, 100px)', height: 'calc(var(--thumb-size, 100px) * 1.3)', objectFit: 'contain', background: '#fff' }} />
+        <div key={i} className="card-d" style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <ProductImg product={p} className="d-img" style={{ width: 'var(--thumb-size, 100px)', height: 'calc(var(--thumb-size, 100px) * 1.3)', objectFit: 'contain', background: '#fff' }} />
+            {p.sold_out && <SoldOutOverlay />}
+          </div>
           <div className="d-body">
             <div>
               <div className="d-name">{p.name}</div>
               {p.spec && <div className="d-spec">{p.spec}</div>}
             </div>
-            {showPrice && <div className="d-price">{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+            {showPrice && <div className="d-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
           </div>
         </div>
       ))}
@@ -182,11 +222,14 @@ function RenderTemplateE({ products, showPrice }: { products: Product[]; showPri
               <div key={p.code} className="card-e">
                 <div className="e-num">{num}</div>
                 <div className="e-info">
-                  <div className="e-name">{p.name}</div>
+                  <div className="e-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {p.sold_out && <span style={{ background: '#dc2626', color: '#fff', fontSize: '8px', fontWeight: 800, padding: '0px 4px', borderRadius: '2px', flexShrink: 0, lineHeight: '13px' }}>품절</span>}
+                    {p.name}
+                  </div>
                   {p.spec && <div className="e-spec">{p.spec}</div>}
                 </div>
                 <div className="e-dots" />
-                {showPrice && <div className="e-price">{formatPrice(p.sell)}</div>}
+                {showPrice && <div className="e-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell)}</div>}
               </div>
             );
           })}
@@ -200,12 +243,15 @@ function RenderTemplateF({ products, showPrice }: { products: Product[]; showPri
   return (
     <div className="grid-f" style={getScaleVars(products.length, 'F')}>
       {products.map((p, i) => (
-        <div key={i} className="card-f">
-          <ProductImg product={p} className="f-img" style={{ width: '45%', height: 'var(--card-img-h, 260px)', objectFit: 'contain', background: '#fff' }} />
+        <div key={i} className="card-f" style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', width: '45%', flexShrink: 0 }}>
+            <ProductImg product={p} className="f-img" style={{ width: '100%', height: 'var(--card-img-h, 260px)', objectFit: 'contain', background: '#fff' }} />
+            {p.sold_out && <SoldOutOverlay />}
+          </div>
           <div className="f-body">
             <div className="f-name">{p.name}</div>
             {p.spec && <div className="f-spec">{p.spec}</div>}
-            {showPrice && <div className="f-price">{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+            {showPrice && <div className="f-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
           </div>
         </div>
       ))}
@@ -232,9 +278,12 @@ function RenderTemplateL({ products, showPrice }: { products: Product[]; showPri
             {items.map((p, i) => (
               <div key={p.code} className={`l-row ${i % 2 === 0 ? 'l-row-even' : ''}`}>
                 <div className="l-cell l-cell-no">{i + 1}</div>
-                <div className="l-cell l-cell-name">{p.name}</div>
+                <div className="l-cell l-cell-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {p.sold_out && <span style={{ background: '#dc2626', color: '#fff', fontSize: '8px', fontWeight: 800, padding: '0px 4px', borderRadius: '2px', flexShrink: 0, lineHeight: '13px' }}>품절</span>}
+                  {p.name}
+                </div>
                 <div className="l-cell l-cell-spec">{p.spec || '-'}</div>
-                {showPrice && <div className="l-cell l-cell-price l-price-val">{formatPrice(p.sell)}</div>}
+                {showPrice && <div className="l-cell l-cell-price l-price-val" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell)}</div>}
               </div>
             ))}
           </div>
@@ -274,13 +323,16 @@ function RenderCover({ products, showPrice, settings }: { products: Product[]; s
       </div>
       <div className="cover-products">
         {heroes.map((p, i) => (
-          <div key={i} className={`cover-card ${i === 0 ? 'cover-card-main' : ''}`}>
-            <div className="cc-ribbon">{i === 0 ? settings.ribbon : '추천 상품'}</div>
-            <ProductImg product={p} className="cc-img" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
+          <div key={i} className={`cover-card ${i === 0 ? 'cover-card-main' : ''}`} style={{ position: 'relative' }}>
+            <div className="cc-ribbon">{p.sold_out ? '품절' : (i === 0 ? settings.ribbon : '추천 상품')}</div>
+            <div style={{ position: 'relative' }}>
+              <ProductImg product={p} className="cc-img" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
+              {p.sold_out && <SoldOutOverlay />}
+            </div>
             <div className="cc-body">
               <div className="cc-name">{p.name}</div>
               <div className="cc-spec">{p.spec}</div>
-              {showPrice && <div className="cc-price">{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+              {showPrice && <div className="cc-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
             </div>
           </div>
         ))}
@@ -812,11 +864,12 @@ export default function FlyerPage() {
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
-                        style={{ fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'text' }}
+                        style={{ fontSize: '13px', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'text', display: 'flex', alignItems: 'center', gap: '4px' }}
                         onClick={e => { e.stopPropagation(); openEditModal(p.code, p.name); }}
                         title="클릭하여 품목명 수정"
                       >
-                        {nameOverrides[p.code] || p.display_name || p.name}
+                        {p.sold_out && <span style={{ background: '#dc2626', color: '#fff', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '3px', flexShrink: 0, lineHeight: '14px' }}>품절</span>}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{nameOverrides[p.code] || p.display_name || p.name}</span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{p.spec}</div>
                     </div>
