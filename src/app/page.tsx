@@ -516,17 +516,22 @@ export default function FlyerPage() {
   async function preloadImages(container: HTMLElement): Promise<Map<string, string>> {
     const imgs = container.querySelectorAll('img');
     const map = new Map<string, string>();
-    await Promise.all(Array.from(imgs).map(async (img) => {
-      if (!img.src || img.src.startsWith('data:') || map.has(img.src)) return;
+    const unique = new Set<string>();
+    imgs.forEach(img => { if (img.src && !img.src.startsWith('data:')) unique.add(img.src); });
+    await Promise.all(Array.from(unique).map(async (src) => {
       try {
-        const resp = await fetch(img.src);
+        // CORS 프록시를 통해 이미지 로드 후 base64 변환
+        const proxySrc = src.includes('wsrv.nl') || src.startsWith('data:')
+          ? src
+          : `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=png`;
+        const resp = await fetch(proxySrc);
         const blob = await resp.blob();
         const b64: string = await new Promise((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
           reader.readAsDataURL(blob);
         });
-        map.set(img.src, b64);
+        map.set(src, b64);
       } catch { /* skip */ }
     }));
     return map;
@@ -534,7 +539,7 @@ export default function FlyerPage() {
 
   async function captureFlyer(pageEl: HTMLElement, scale: number) {
     const html2canvas = (await import('html2canvas')).default;
-    // 이미지를 base64로 미리 변환 (CORS 우회)
+    // 이미지를 base64로 미리 변환 (CORS 프록시 경유)
     const imageMap = await preloadImages(pageEl);
 
     const canvas = await html2canvas(pageEl, {
