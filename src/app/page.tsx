@@ -513,8 +513,29 @@ export default function FlyerPage() {
   }
 
   // ── Export (다중 페이지 지원) ──
+  async function preloadImages(container: HTMLElement): Promise<Map<string, string>> {
+    const imgs = container.querySelectorAll('img');
+    const map = new Map<string, string>();
+    await Promise.all(Array.from(imgs).map(async (img) => {
+      if (!img.src || img.src.startsWith('data:') || map.has(img.src)) return;
+      try {
+        const resp = await fetch(img.src);
+        const blob = await resp.blob();
+        const b64: string = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        map.set(img.src, b64);
+      } catch { /* skip */ }
+    }));
+    return map;
+  }
+
   async function captureFlyer(pageEl: HTMLElement, scale: number) {
     const html2canvas = (await import('html2canvas')).default;
+    // 이미지를 base64로 미리 변환 (CORS 우회)
+    const imageMap = await preloadImages(pageEl);
 
     const canvas = await html2canvas(pageEl, {
       scale: scale,
@@ -528,6 +549,11 @@ export default function FlyerPage() {
       scrollX: 0,
       scrollY: 0,
       onclone: function(clonedDoc: Document, clonedEl: HTMLElement) {
+        // 이미지를 base64로 교체 (canvas taint 방지)
+        clonedEl.querySelectorAll('img').forEach(img => {
+          const b64 = imageMap.get(img.src);
+          if (b64) img.src = b64;
+        });
         // 클론된 요소에서 zoom/transform 제거, 정확한 크기 설정
         clonedEl.style.width = '794px';
         clonedEl.style.height = '1123px';
