@@ -554,10 +554,25 @@ export default function FlyerPage() {
       scrollX: 0,
       scrollY: 0,
       onclone: function(clonedDoc: Document, clonedEl: HTMLElement) {
-        // 이미지를 base64로 교체 (canvas taint 방지)
+        // 이미지 처리: base64 교체 + object-fit → background-image 변환
         clonedEl.querySelectorAll('img').forEach(img => {
           const b64 = imageMap.get(img.src);
-          if (b64) img.src = b64;
+          // 로고, QR 등 작은 이미지는 src만 교체
+          if (img.style.objectFit !== 'contain') {
+            if (b64) img.src = b64;
+            return;
+          }
+          // 상품 이미지: object-fit: contain → background-image로 변환
+          const src = b64 || img.src;
+          const div = clonedDoc.createElement('div');
+          div.className = img.className;
+          div.style.cssText = img.style.cssText;
+          div.style.backgroundImage = `url("${src}")`;
+          div.style.backgroundSize = 'contain';
+          div.style.backgroundRepeat = 'no-repeat';
+          div.style.backgroundPosition = 'center';
+          div.style.objectFit = '';
+          img.parentElement?.replaceChild(div, img);
         });
         // 클론된 요소에서 zoom/transform 제거, 정확한 크기 설정
         clonedEl.style.width = '794px';
