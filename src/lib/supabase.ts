@@ -48,7 +48,8 @@ export function getImageUrl(product: Product): string | null {
 export async function applyScheduledPrices(): Promise<number> {
   if (!supabase) return 0;
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    // KST(한국시간) 기준 오늘 날짜
+    const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
     const { data: pending, error } = await supabase
       .from('price_schedule')
       .select('*')
