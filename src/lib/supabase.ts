@@ -95,6 +95,7 @@ export async function fetchProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
     .select('*')
+    .or('hidden.is.null,hidden.eq.false')
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true });
 
