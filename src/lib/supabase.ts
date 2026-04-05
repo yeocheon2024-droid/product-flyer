@@ -44,7 +44,52 @@ export function getImageUrl(product: Product): string | null {
   return `${STORAGE_URL}/${product.code}.png`;
 }
 
+// 예약 가격 자동 적용 — 적용일 도래한 pending 건을 products.sell에 반영
+export async function applyScheduledPrices(): Promise<number> {
+  if (!supabase) return 0;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: pending, error } = await supabase
+      .from('price_schedule')
+      .select('*')
+      .eq('status', 'pending')
+      .lte('apply_date', today);
+    if (error || !pending || pending.length === 0) return 0;
+
+    let applied = 0;
+    const nowIso = new Date().toISOString();
+    for (const s of pending) {
+      const { data: lockRows } = await supabase
+        .from('price_schedule')
+        .update({ status: 'applied', applied_at: nowIso })
+        .eq('id', s.id)
+        .eq('status', 'pending')
+        .select();
+      if (!lockRows || lockRows.length === 0) continue;
+
+      const { error: upErr } = await supabase
+        .from('products')
+        .update({ sell: s.new_sell })
+        .eq('code', s.product_code);
+      if (upErr) {
+        await supabase.from('price_schedule')
+          .update({ status: 'pending', applied_at: null }).eq('id', s.id);
+        continue;
+      }
+      applied++;
+    }
+    if (applied > 0) console.log(`[price_schedule] ${applied}건 자동 반영`);
+    return applied;
+  } catch (err) {
+    console.error('applyScheduledPrices error:', err);
+    return 0;
+  }
+}
+
 export async function fetchProducts(): Promise<Product[]> {
+  // 품목 조회 전 예약 가격 체크 & 적용
+  await applyScheduledPrices();
+
   const { data, error } = await supabase
     .from('products')
     .select('*')
