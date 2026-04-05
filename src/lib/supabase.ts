@@ -26,6 +26,7 @@ export interface Product {
   image_url?: string;
   display_name?: string;
   sold_out?: boolean;
+  sort_order?: number;
 }
 
 export function getImageUrl(product: Product): string | null {
@@ -94,6 +95,7 @@ export async function fetchProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
     .select('*')
+    .order('sort_order', { ascending: true })
     .order('name', { ascending: true });
 
   if (error) {
@@ -101,6 +103,17 @@ export async function fetchProducts(): Promise<Product[]> {
     return [];
   }
   return data || [];
+}
+
+// 중분류 순서 조회
+export async function fetchCategoryOrder(): Promise<Record<string, number>> {
+  if (!supabase) return {};
+  const { data } = await supabase.from('category_order').select('minor_name,sort_order');
+  const map: Record<string, number> = {};
+  (data || []).forEach((r: { minor_name: string; sort_order: number }) => {
+    map[r.minor_name] = r.sort_order;
+  });
+  return map;
 }
 
 export async function fetchProductByCode(code: string): Promise<Product | null> {
