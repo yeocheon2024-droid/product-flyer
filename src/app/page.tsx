@@ -1,7 +1,17 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { fetchProducts, getImageUrl, formatPrice, getMajorCategories, getMinorCategories, Product } from '@/lib/supabase';
+import { fetchProducts, fetchCategoryOrder, getImageUrl, formatPrice, getMajorCategories, getMinorCategories, Product } from '@/lib/supabase';
+
+// 중분류 배열을 ERP category_order 기준으로 정렬 (없으면 가나다)
+function sortMinorsByOrder(minors: string[], orderMap: Record<string, number>): string[] {
+  return [...minors].sort((a, b) => {
+    const aO = orderMap[a] !== undefined ? orderMap[a] : 9999;
+    const bO = orderMap[b] !== undefined ? orderMap[b] : 9999;
+    if (aO !== bO) return aO - bO;
+    return a.localeCompare(b, 'ko');
+  });
+}
 
 // ── Types ──
 type Template = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'L' | 'COVER';
@@ -365,6 +375,7 @@ export default function FlyerPage() {
   const [noSellProducts, setNoSellProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [minorCategories, setMinorCategories] = useState<string[]>([]);
+  const [categoryOrder, setCategoryOrder] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('전체');
   const [activeMinor, setActiveMinor] = useState('전체');
@@ -431,21 +442,25 @@ export default function FlyerPage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const data = await fetchProducts();
+      const [data, order] = await Promise.all([fetchProducts(), fetchCategoryOrder()]);
       setProducts(data.filter(p => p.sell > 0));
       setNoSellProducts(data.filter(p => !p.sell || p.sell <= 0));
+      setCategoryOrder(order);
       const sellData = data.filter(p => p.sell > 0);
       setCategories(getMajorCategories(sellData));
-      setMinorCategories(getMinorCategories(sellData));
+      setMinorCategories(sortMinorsByOrder(getMinorCategories(sellData), order));
       setLoading(false);
     })();
   }, []);
 
   // ── Filtered Products ──
-  // 현재 대분류에 해당하는 중분류 목록
+  // 현재 대분류에 해당하는 중분류 목록 (ERP category_order 기준 정렬)
   const filteredMinors = activeCategory === '전체'
     ? minorCategories
-    : [...new Set(products.filter(p => p.major_name === activeCategory).map(p => p.minor_name).filter(Boolean))].sort();
+    : sortMinorsByOrder(
+        [...new Set(products.filter(p => p.major_name === activeCategory).map(p => p.minor_name).filter(Boolean) as string[])],
+        categoryOrder
+      );
 
   const filtered = products.filter(p => {
     const matchCat = activeCategory === '전체' || p.major_name === activeCategory;
