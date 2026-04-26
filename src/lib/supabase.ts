@@ -21,8 +21,8 @@ export interface Product {
   vendor_name: string;
   vendor_type: string;
   cost: number;
+  /** 이체할인가 (계좌이체 결제 시 받는 금액) */
   sell: number;
-  transfer_price?: number | null;
   registered_at: string;
   image_url?: string;
   display_name?: string;
