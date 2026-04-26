@@ -22,6 +22,7 @@ export interface Product {
   vendor_type: string;
   cost: number;
   sell: number;
+  transfer_price?: number | null;
   registered_at: string;
   image_url?: string;
   display_name?: string;
