@@ -104,7 +104,13 @@ export async function fetchProducts(): Promise<Product[]> {
     console.error('Failed to fetch products:', error);
     return [];
   }
-  return data || [];
+  // 자체매입(지구로켓) 상품을 항상 첫 줄에 노출. 그 외 정렬은 supabase 결과 유지.
+  const arr = (data || []) as Product[];
+  return arr.sort((a, b) => {
+    const aSelf = (a as Product & { vendor_type?: string }).vendor_type === 'self' ? 0 : 1;
+    const bSelf = (b as Product & { vendor_type?: string }).vendor_type === 'self' ? 0 : 1;
+    return aSelf - bSelf;
+  });
 }
 
 // 중분류 순서 조회
