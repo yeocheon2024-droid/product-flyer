@@ -1,3 +1,6 @@
+import { isJiguorderPlayStoreUrl } from "./model.js";
+
+
 const RANGE_LABELS = ["쌀·잡곡", "김치·반찬", "계란", "공산품", "야채", "수산·축산"];
 
 
@@ -176,7 +179,7 @@ export function MarketingFlyerDocument({ template, qrDataUrl }) {
   const totalCount =
     Number(rangeSummary.totalCount) ||
     Number(rangeSummary.goodsCount || 0) + Number(rangeSummary.vegetableCount || 0);
-  const qrLabel = qrTargetUrl.includes("play.google.com")
+  const qrLabel = isJiguorderPlayStoreUrl(qrTargetUrl)
     ? "Google Play 올인원 발주 앱 설치 QR 코드"
     : "지구농산 발주 서비스 QR 코드";
 
@@ -324,7 +327,7 @@ export function MarketingFlyerDocument({ template, qrDataUrl }) {
             <span>{backPage.cta?.eyebrow || "지금 바로 시작하세요"}</span>
             <h2>{backPage.cta?.title || "QR 찍고 발주 앱 설치"}</h2>
             <p>{backPage.cta?.body || "Google Play에서 올인원 발주를 만나보세요."}</p>
-            <small>Google Play · 올인원 발주</small>
+            <small>{backPage.cta?.platformLabel || "Google Play · 올인원 발주"}</small>
           </div>
           <ContactBlock contact={contact} inverse />
           <p className="mkt-back-footer__note">{backPage.footerNote}</p>

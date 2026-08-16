@@ -51,12 +51,21 @@ test("공개 상품 조회는 예약가격 반영 함수를 실행하지 않는�
   assert.doesNotMatch(fetchBody, /cost|vendor_code|vendor_name|registered_at/);
 });
 
-test("공개 전단은 공식 연락처와 Google Play QR을 임의 편집할 수 없다", async () => {
+test("브랜드 연락처와 QR은 편집할 수 있고 QR은 HTTPS 주소만 허용한다", async () => {
   const editor = await readSource("src/features/marketing-flyer/MarketingFlyerEditor.jsx");
   const model = await readSource("src/features/marketing-flyer/model.js");
-  assert.match(editor, /문의 전화 \(고정\)/);
-  assert.match(editor, /QR 연결 주소 \(Google Play 고정\)/);
-  assert.match(model, /contact: \{ \.\.\.DEFAULT_CONTACT \}/);
+  const document = await readSource("src/features/marketing-flyer/MarketingFlyerDocument.jsx");
+  assert.match(editor, /updateContact/);
+  assert.match(editor, /QR 연결 주소/);
+  assert.match(editor, /updateQrTargetUrl/);
+  assert.match(editor, /defaultQrCopyForUrl/);
+  assert.doesNotMatch(editor, /문의 전화 \(고정\)|Google Play 고정/);
+  assert.match(model, /contact: normalizeContact\(overrides\.contact\)/);
+  assert.match(model, /isValidQrTargetUrl\(template\?\.qrTargetUrl\)/);
+  assert.match(editor, /앞면 QR 제목/);
+  assert.match(editor, /뒷면 QR 하단 문구/);
+  assert.match(document, /backPage\.cta\?\.platformLabel/);
+  assert.match(document, /isJiguorderPlayStoreUrl\(qrTargetUrl\)/);
 });
 
 test("브라우저 인쇄에서도 양면 전단 미리보기가 표시된다", async () => {

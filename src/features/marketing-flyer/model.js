@@ -1,10 +1,27 @@
 export const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.jiguorder.customer";
+export const MAX_QR_URL_LENGTH = 700;
 
-const DEFAULT_CONTACT = Object.freeze({
+export const DEFAULT_CONTACT = Object.freeze({
   phone: "1566-1521",
   hours: "평일 09:00-17:00",
   coverage: "인천·서울·경기",
+});
+
+const PLAY_STORE_QR_COPY = Object.freeze({
+  frontTitle: "QR 찍고 앱 설치 후 전체 품목 확인·간편 발주",
+  frontBody: "QR은 안드로이드 Google Play 설치 화면으로 연결됩니다.",
+  backTitle: "QR 찍고 발주앱 설치",
+  backBody: "Google Play · 올인원 발주",
+  platformLabel: "Google Play · 올인원 발주",
+});
+
+const CUSTOM_LINK_QR_COPY = Object.freeze({
+  frontTitle: "QR 찍고 자세한 안내 확인",
+  frontBody: "QR을 스캔하면 연결된 안내 페이지로 이동합니다.",
+  backTitle: "QR 찍고 자세히 보기",
+  backBody: "연결된 페이지에서 자세한 내용을 확인하세요.",
+  platformLabel: "QR 연결 안내",
 });
 
 export const DEFAULT_DELIVERY_POLICIES = Object.freeze([
@@ -50,30 +67,52 @@ export function normalizeText(value, fallback = "", maxLength = 180) {
   return normalized || fallback;
 }
 
-export function normalizeHttpsUrl(value, fallback = PLAY_STORE_URL) {
+export function isValidHttpsUrl(value) {
   try {
     const parsed = new URL(String(value ?? "").trim());
-    return parsed.protocol === "https:" ? parsed.href : fallback;
+    return (
+      parsed.protocol === "https:" &&
+      Boolean(parsed.hostname) &&
+      !parsed.username &&
+      !parsed.password
+    );
   } catch {
-    return fallback;
+    return false;
   }
 }
 
-export function normalizeQrTargetUrl(value) {
-  const normalized = normalizeHttpsUrl(value, PLAY_STORE_URL);
+export function isValidQrTargetUrl(value) {
+  if (!isValidHttpsUrl(value)) return false;
+  return new URL(String(value).trim()).href.length <= MAX_QR_URL_LENGTH;
+}
+
+export function isJiguorderPlayStoreUrl(value) {
   try {
-    const parsed = new URL(normalized);
-    if (
-      parsed.hostname === "play.google.com" &&
+    const parsed = new URL(String(value ?? "").trim());
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname.toLowerCase() === "play.google.com" &&
       parsed.pathname === "/store/apps/details" &&
       parsed.searchParams.get("id") === "com.jiguorder.customer"
-    ) {
-      return PLAY_STORE_URL;
-    }
+    );
   } catch {
-    // The fixed Play Store URL below is always safe.
+    return false;
   }
-  return PLAY_STORE_URL;
+}
+
+export function defaultQrCopyForUrl(value) {
+  return isJiguorderPlayStoreUrl(value) ? PLAY_STORE_QR_COPY : CUSTOM_LINK_QR_COPY;
+}
+
+export function normalizeHttpsUrl(value, fallback = PLAY_STORE_URL) {
+  if (!isValidHttpsUrl(value)) return fallback;
+  return new URL(String(value).trim()).href;
+}
+
+export function normalizeQrTargetUrl(value) {
+  return isValidQrTargetUrl(value)
+    ? new URL(String(value).trim()).href
+    : PLAY_STORE_URL;
 }
 
 export function normalizeImageUrl(
@@ -95,6 +134,17 @@ function normalizePrice(value, fallback = 0) {
 function normalizeCount(value, fallback) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function normalizeContact(contact) {
+  const source = contact && typeof contact === "object" ? contact : {};
+  return {
+    phone: normalizeText(source.phone, DEFAULT_CONTACT.phone, 30),
+    hours: normalizeText(source.hours, DEFAULT_CONTACT.hours, 50),
+    coverage: source.coverage === undefined
+      ? DEFAULT_CONTACT.coverage
+      : normalizeText(source.coverage, "", 60),
+  };
 }
 
 function isVisibleProduct(product) {
@@ -218,6 +268,8 @@ export function buildTemplateFromCatalog(products = [], overrides = {}) {
   const backOverrides = overrides.backPage ?? {};
   const rangeOverrides = frontOverrides.rangeSummary ?? {};
   const heroOverrides = frontOverrides.heroProducts ?? overrides.heroProducts ?? {};
+  const qrTargetUrl = normalizeQrTargetUrl(overrides.qrTargetUrl);
+  const qrCopy = defaultQrCopyForUrl(qrTargetUrl);
 
   return {
     schemaVersion: 1,
@@ -229,9 +281,8 @@ export function buildTemplateFromCatalog(products = [], overrides = {}) {
       new Date().toISOString().slice(0, 10),
       10,
     ),
-    qrTargetUrl: normalizeQrTargetUrl(overrides.qrTargetUrl),
-    // Public flyer output always uses the verified company contact details.
-    contact: { ...DEFAULT_CONTACT },
+    qrTargetUrl,
+    contact: normalizeContact(overrides.contact),
     frontPage: {
       headline: normalizeText(
         frontOverrides.headline,
@@ -264,12 +315,12 @@ export function buildTemplateFromCatalog(products = [], overrides = {}) {
         ),
         title: normalizeText(
           frontOverrides.cta?.title,
-          "QR 찍고 앱 설치 후 전체 품목 확인·간편 발주",
+          qrCopy.frontTitle,
           70,
         ),
         body: normalizeText(
           frontOverrides.cta?.body,
-          "QR은 안드로이드 Google Play 설치 화면으로 연결됩니다.",
+          qrCopy.frontBody,
           100,
         ),
       },
@@ -295,8 +346,13 @@ export function buildTemplateFromCatalog(products = [], overrides = {}) {
       appGuideSteps: normalizeSteps(backOverrides.appGuideSteps),
       cta: {
         eyebrow: normalizeText(backOverrides.cta?.eyebrow, "지금 바로 시작하세요", 30),
-        title: normalizeText(backOverrides.cta?.title, "QR 찍고 발주앱 설치", 50),
-        body: normalizeText(backOverrides.cta?.body, "Google Play · 올인원 발주", 50),
+        title: normalizeText(backOverrides.cta?.title, qrCopy.backTitle, 50),
+        body: normalizeText(backOverrides.cta?.body, qrCopy.backBody, 50),
+        platformLabel: normalizeText(
+          backOverrides.cta?.platformLabel,
+          qrCopy.platformLabel,
+          50,
+        ),
       },
       footerNote: normalizeText(
         backOverrides.footerNote,
@@ -315,8 +371,14 @@ export function validateTemplate(template) {
   if (new Set(template?.frontPage?.heroProducts?.map((product) => product.code)).size !== 4) {
     errors.push("같은 상품을 중복 선택할 수 없습니다.");
   }
-  if (template?.qrTargetUrl !== PLAY_STORE_URL) {
-    errors.push("QR 링크는 지구오더 Google Play 앱 주소만 사용할 수 있습니다.");
+  if (!isValidQrTargetUrl(template?.qrTargetUrl)) {
+    errors.push(`QR 연결 주소는 인증정보가 없는 ${MAX_QR_URL_LENGTH}자 이하의 https:// 주소를 입력해 주세요.`);
+  }
+  if (!normalizeText(template?.contact?.phone, "", 30)) {
+    errors.push("문의 전화를 입력해 주세요.");
+  }
+  if (!normalizeText(template?.contact?.hours, "", 50)) {
+    errors.push("상담 시간을 입력해 주세요.");
   }
   template?.frontPage?.heroProducts?.forEach((product) => {
     if (!Number.isInteger(product.flyerPrice) || product.flyerPrice <= 0) {

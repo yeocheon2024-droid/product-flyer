@@ -240,6 +240,24 @@
   box-shadow: 0 0 0 3px rgba(236, 90, 24, 0.12);
 }
 
+.mkt-brand-settings__input--invalid {
+  border-color: #c83f32 !important;
+  box-shadow: 0 0 0 3px rgba(200, 63, 50, 0.1);
+}
+
+.mkt-brand-settings__hint {
+  grid-column: 1 / -1;
+  margin-top: -3px;
+  color: #70675b;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.mkt-brand-settings__hint--error {
+  color: #a82f25;
+  font-weight: 750;
+}
+
 .mkt-editor__products {
   display: grid;
   gap: 10px;
@@ -266,6 +284,200 @@
 
 .mkt-editor-product > select {
   display: block;
+}
+
+.mkt-product-picker {
+  position: relative;
+  display: grid;
+  gap: 7px;
+}
+
+.mkt-product-picker__selected {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid #e4d5c1;
+  border-radius: 8px;
+  background: #fffefb;
+}
+
+.mkt-product-picker__selected > span {
+  color: var(--mkt-ui-orange-deep);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.mkt-product-picker__selected > strong {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mkt-product-picker__selected > small {
+  overflow: hidden;
+  color: var(--mkt-ui-muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mkt-product-picker__input-wrap {
+  position: relative;
+}
+
+.mkt-product-picker__input-wrap input {
+  width: 100%;
+  height: 44px;
+  min-width: 0;
+  padding: 0 42px 0 34px;
+  border: 1px solid #cfbea8;
+  border-radius: 9px;
+  outline: none;
+  color: var(--mkt-ui-ink);
+  background: white;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.mkt-product-picker__input-wrap input:focus {
+  border-color: var(--mkt-ui-orange);
+  box-shadow: 0 0 0 3px rgba(236, 90, 24, 0.12);
+}
+
+.mkt-product-picker__input-wrap input::-webkit-search-cancel-button {
+  display: none;
+  appearance: none;
+}
+
+.mkt-product-picker__search-icon {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 11px;
+  color: #75695c;
+  font: 900 19px/1 Arial, sans-serif;
+  pointer-events: none;
+  transform: translateY(-52%);
+}
+
+.mkt-product-picker__clear {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  color: #6e6255;
+  background: transparent;
+  font: 700 19px/1 Arial, sans-serif;
+  cursor: pointer;
+}
+
+.mkt-product-picker__clear:hover,
+.mkt-product-picker__clear:focus-visible {
+  outline: none;
+  color: var(--mkt-ui-orange-deep);
+  background: #fff0e5;
+}
+
+.mkt-product-picker__menu {
+  overflow: hidden;
+  border: 1px solid #d8c8b4;
+  border-radius: 9px;
+  background: white;
+  box-shadow: 0 8px 20px rgba(56, 42, 25, 0.12);
+}
+
+.mkt-product-picker__summary {
+  padding: 7px 10px;
+  border-bottom: 1px solid #eee4d7;
+  color: #75695c;
+  background: #fffaf2;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.mkt-product-picker__menu ul {
+  max-height: 272px;
+  margin: 0;
+  overflow-y: auto;
+  padding: 4px;
+  list-style: none;
+  overscroll-behavior: contain;
+}
+
+.mkt-product-picker__menu li {
+  position: relative;
+  display: grid;
+  min-height: 50px;
+  align-content: center;
+  gap: 3px;
+  padding: 7px 56px 7px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.mkt-product-picker__menu li + li {
+  border-top: 1px solid #f1e9de;
+}
+
+.mkt-product-picker__menu li.is-active {
+  background: #fff0e5;
+}
+
+.mkt-product-picker__menu li.is-selected {
+  color: var(--mkt-ui-green-deep);
+  background: #eef8f1;
+}
+
+.mkt-product-picker__menu li strong {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mkt-product-picker__menu li small {
+  overflow: hidden;
+  color: #766d62;
+  font-size: 9px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mkt-product-picker__menu li > span {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  padding: 3px 6px;
+  border-radius: 99px;
+  color: white;
+  background: var(--mkt-ui-green);
+  font-size: 8px;
+  font-weight: 900;
+  transform: translateY(-50%);
+}
+
+.mkt-product-picker__empty {
+  margin: 0;
+  padding: 18px 12px;
+  color: #75695c;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .mkt-button {

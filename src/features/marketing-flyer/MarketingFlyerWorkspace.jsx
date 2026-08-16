@@ -124,7 +124,7 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
             checked={priceApproved}
             onChange={(event) => setPriceApproved(event.target.checked)}
           />
-          <span>가격·재고·행사기간을 최종 확인했습니다.</span>
+          <span>가격·재고·행사기간·연락처·QR 주소를 최종 확인했습니다.</span>
         </label>
         {status && <div className="mkt-status" role="status">{status}</div>}
 
