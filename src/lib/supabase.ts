@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://joqupkcczjebwnomnfbo.supabase.co';
-const supabaseKey = 'sb_publishable_SsIL-yhXCilGv7XZXo963Q_PYpeeG83';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://joqupkcczjebwnomnfbo.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_SsIL-yhXCilGv7XZXo963Q_PYpeeG83';
 
 export const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null as any;
 
@@ -90,23 +90,31 @@ export async function applyScheduledPrices(): Promise<number> {
 }
 
 export async function fetchProducts(): Promise<Product[]> {
-  // 품목 조회 전 예약 가격 체크 & 적용
-  await applyScheduledPrices();
+  // Public catalog and flyer views are read-only. Scheduled prices are applied by admin/server jobs.
+  // 가격과 예약가격 상태는 변경하지 않고 현재 상품 목록만 읽는다.
+  // PostgREST 기본 최대 1,000행을 넘는 품목도 누락 없이 가져온다.
+  const pageSize = 1000;
+  const allProducts: Product[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from('products')
+      .select('code,name,display_name,spec,sell,image_url,major_name,minor_name,sold_out,sort_order,vendor_type')
+      .or('hidden.is.null,hidden.eq.false')
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true })
+      .order('code', { ascending: true })
+      .range(from, from + pageSize - 1);
 
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .or('hidden.is.null,hidden.eq.false')
-    .order('sort_order', { ascending: true })
-    .order('name', { ascending: true });
-
-  if (error) {
-    console.error('Failed to fetch products:', error);
-    return [];
+    if (error) {
+      console.error('Failed to fetch products:', error);
+      return [];
+    }
+    const page = (data || []) as Product[];
+    allProducts.push(...page);
+    if (page.length < pageSize) break;
   }
   // 자체매입(지구로켓) 상품을 항상 첫 줄에 노출. 그 외 정렬은 supabase 결과 유지.
-  const arr = (data || []) as Product[];
-  return arr.sort((a, b) => {
+  return allProducts.sort((a, b) => {
     const aSelf = (a as Product & { vendor_type?: string }).vendor_type === 'self' ? 0 : 1;
     const bSelf = (b as Product & { vendor_type?: string }).vendor_type === 'self' ? 0 : 1;
     return aSelf - bSelf;

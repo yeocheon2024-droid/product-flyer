@@ -715,7 +715,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v3.7</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v3.8</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
@@ -998,6 +998,25 @@ export default function FlyerPage() {
             >
               <div style={{ fontSize: '11px', fontWeight: 800, color: template === 'COVER' ? 'var(--accent)' : 'var(--accent2)' }}>표지 (미끼상품)</div>
             </div>
+            <a
+              href="/promo/"
+              style={{
+                display: 'block',
+                marginTop: '4px',
+                padding: '9px 7px',
+                borderRadius: '4px',
+                border: '1px solid #1d5537',
+                background: '#edf7f0',
+                color: '#123424',
+                cursor: 'pointer',
+                textAlign: 'center',
+                textDecoration: 'none',
+                transition: 'all 0.12s',
+              }}
+            >
+              <div style={{ fontSize: '11px', fontWeight: 900 }}>특가 + 발주안내 (양면)</div>
+              <div style={{ marginTop: '3px', color: '#4a7058', fontSize: '9px', fontWeight: 700 }}>A4 앞·뒷면 · PDF · PNG</div>
+            </a>
           </div>
 
           {/* Settings */}
