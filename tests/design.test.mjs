@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import test from "node:test";
 
 const css = readFileSync(
@@ -38,7 +38,7 @@ test("앞·뒷면 구역 높이는 각각 A4 297mm를 정확히 채운다", () =
 });
 
 test("상품과 가격이 배경 장식보다 강한 단순 카탈로그 계층을 유지한다", () => {
-  assert.match(rule(".mkt-front-hero"), /background:\s*white/);
+  assert.match(rule(".mkt-front-hero"), /background:\s*rgba\(255, 255, 255, 0\.84\)/);
   assert.match(rule(".mkt-front-content"), /grid-template-rows:\s*158mm 37mm/);
   assert.match(rule(".mkt-product__sale-price strong"), /font-size:\s*26pt/);
   assert.match(
@@ -47,6 +47,28 @@ test("상품과 가격이 배경 장식보다 강한 단순 카탈로그 계층�
   );
   assert.match(rule(".mkt-range-panel"), /background:\s*var\(--mkt-green-deep\)/);
   assert.doesNotMatch(documentSource, /WHOLESALE\s*·\s*FRESH\s*·\s*DIRECT/);
+});
+
+test("식품 사진 배경은 내보내기 대기 대상 이미지로 두고 카드 대비를 보존한다", () => {
+  assert.equal(
+    documentSource.match(/src="\/marketing-flyer\/assets\/food-background-v1\.jpg"/g)?.length,
+    2,
+  );
+  assert.equal(documentSource.match(/className="mkt-page-food-bg/g)?.length, 2);
+  assert.equal(documentSource.match(/loading="eager"/g)?.length, 2);
+  assert.match(rule(".mkt-page-food-bg"), /position:\s*absolute/);
+  assert.match(rule(".mkt-front-content"), /background:\s*rgba\(249, 247, 240, 0\.9\)/);
+  assert.match(rule(".mkt-front-hero"), /border-bottom:\s*0\.8mm solid var\(--mkt-lime\)/);
+  assert.match(
+    quietCss,
+    /\.mkt-product,\s*\.mkt-product--featured\s*{[^}]*background:\s*white/s,
+  );
+
+  const backgroundAsset = statSync(
+    new URL("../public/marketing-flyer/assets/food-background-v1.jpg", import.meta.url),
+  );
+  assert.ok(backgroundAsset.size > 0);
+  assert.ok(backgroundAsset.size <= 500_000, "식품 배경 JPEG는 500KB 이하여야 합니다.");
 });
 
 test("인쇄용 QR은 축소된 안내 영역에서도 29mm를 유지한다", () => {

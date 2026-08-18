@@ -178,6 +178,14 @@ export function MarketingFlyerDocument({ template, qrDataUrl }) {
   return (
     <div className="mkt-flyer-document">
       <section className="flyer-a4 mkt-page mkt-page--front" data-export-page="front" aria-label="홍보 전단 앞면">
+        <img
+          className="mkt-page-food-bg mkt-page-food-bg--front"
+          src="/marketing-flyer/assets/food-background-v1.jpg"
+          alt=""
+          aria-hidden="true"
+          loading="eager"
+          decoding="sync"
+        />
         <header className="mkt-front-hero">
           <div className="mkt-front-hero__topline">
             <BrandLockup />
@@ -246,6 +254,14 @@ export function MarketingFlyerDocument({ template, qrDataUrl }) {
       </section>
 
       <section className="flyer-a4 mkt-page mkt-page--back" data-export-page="back" aria-label="홍보 전단 뒷면">
+        <img
+          className="mkt-page-food-bg mkt-page-food-bg--back"
+          src="/marketing-flyer/assets/food-background-v1.jpg"
+          alt=""
+          aria-hidden="true"
+          loading="eager"
+          decoding="sync"
+        />
         <header className="mkt-back-hero">
           <BrandLockup inverse />
           <div className="mkt-back-hero__copy">

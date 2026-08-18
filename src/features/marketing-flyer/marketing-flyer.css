@@ -1799,20 +1799,40 @@
   --mkt-orange-deep: #ad431d;
   --mkt-red: #bd3028;
   --mkt-red-deep: #92231e;
-  --mkt-cream: #f5f4ef;
-  --mkt-paper: #fbfaf7;
+  --mkt-cream: #f9f7f0;
+  --mkt-paper: #fafafa;
   --mkt-green: #285b40;
   --mkt-green-deep: #173d2b;
-  --mkt-ink: #1c211e;
-  --mkt-muted: #6e716d;
+  --mkt-lime: #8cc63f;
+  --mkt-ink: #0a0a0a;
+  --mkt-muted: #71717a;
   --mkt-yellow: #e7b742;
-  --mkt-rule: #d9d8d2;
+  --mkt-rule: #e4e4e7;
   background: #d7d7d3;
 }
 
 .mkt-page {
   background: var(--mkt-paper);
   box-shadow: 0 4mm 12mm rgba(27, 31, 28, 0.16);
+}
+
+.mkt-page-food-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.mkt-page > header,
+.mkt-page > main,
+.mkt-page > footer {
+  position: relative;
+  z-index: 1;
 }
 
 .mkt-brand {
@@ -1844,9 +1864,9 @@
   grid-template-rows: auto 1fr;
   column-gap: 6mm;
   padding: 4mm 7mm 4.5mm;
-  border-bottom: 0.8mm solid var(--mkt-green-deep);
+  border-bottom: 0.8mm solid var(--mkt-lime);
   color: var(--mkt-ink);
-  background: white;
+  background: rgba(255, 255, 255, 0.84);
 }
 
 .mkt-front-hero::before,
@@ -1941,7 +1961,7 @@
   grid-template-rows: 158mm 37mm;
   gap: 3mm;
   padding: 4mm 7mm 2mm;
-  background: var(--mkt-cream);
+  background: rgba(249, 247, 240, 0.9);
 }
 
 .mkt-product-grid {
@@ -2166,7 +2186,7 @@
   padding: 3.5mm 7mm 2.4mm;
   border-top: 0.8mm solid var(--mkt-green-deep);
   color: var(--mkt-ink);
-  background: white;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .mkt-front-footer .mkt-qr {
@@ -2235,7 +2255,7 @@
   grid-template-columns: 40mm minmax(0, 1fr) 30mm;
   padding: 4mm 7mm;
   color: white;
-  background: var(--mkt-green-deep);
+  background: rgba(23, 61, 43, 0.96);
 }
 
 .mkt-back-hero__copy > span,
@@ -2290,7 +2310,7 @@
   grid-template-rows: 82mm 99mm;
   gap: 4mm;
   padding: 5mm 7mm 3mm;
-  background: var(--mkt-cream);
+  background: rgba(249, 247, 240, 0.93);
 }
 
 .mkt-section-heading h2 {
@@ -2403,7 +2423,7 @@
 .mkt-back-footer {
   height: 66mm;
   padding: 4mm 7mm 2.5mm;
-  background: var(--mkt-green-deep);
+  background: rgba(23, 61, 43, 0.97);
 }
 
 .mkt-back-footer__cta h2 {
