@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  FLYER_CATEGORY_ITEMS,
   MAX_QR_URL_LENGTH,
   PLAY_STORE_URL,
   buildTemplateFromCatalog,
@@ -17,6 +18,44 @@ import {
   normalizeText,
   validateTemplate,
 } from "../src/features/marketing-flyer/model.js";
+
+test("취급 카테고리는 요청한 여섯 품목과 대응 이미지 순서를 유지한다", () => {
+  assert.deepEqual(
+    FLYER_CATEGORY_ITEMS.map((category) => category.label),
+    ["쌀·잡곡", "김치·반찬", "계란", "고추가루", "공산품", "야채"],
+  );
+  assert.deepEqual(
+    FLYER_CATEGORY_ITEMS.map((category) => category.asset),
+    [
+      "/marketing-flyer/assets/rice_calrose.png",
+      "/marketing-flyer/assets/kimchi_dongsung.png",
+      "/marketing-flyer/assets/eggs_special.png",
+      "/marketing-flyer/assets/chili_powder.png",
+      "/marketing-flyer/assets/ketchup.png",
+      "/marketing-flyer/assets/green_onion.png",
+    ],
+  );
+});
+
+test("이전 JSON의 카테고리 문구와 사진을 새 여섯 카테고리로 마이그레이션한다", () => {
+  const template = buildTemplateFromCatalog([], {
+    frontPage: {
+      rangeSummary: {
+        categoryLine: "쌀·김치·계란·고춧가루·소스·냉동·면류·통조림·농산물",
+        thumbAssets: ["/marketing-flyer/assets/sugar.png"],
+      },
+    },
+  });
+
+  assert.equal(
+    template.frontPage.rangeSummary.categoryLine,
+    "쌀·잡곡 · 김치·반찬 · 계란 · 고추가루 · 공산품 · 야채",
+  );
+  assert.deepEqual(
+    template.frontPage.rangeSummary.thumbAssets,
+    FLYER_CATEGORY_ITEMS.map((category) => category.asset),
+  );
+});
 
 test("Google Play 앱 주소를 전단 QR 기본값으로 사용한다", () => {
   assert.equal(PLAY_STORE_URL, "https://play.google.com/store/apps/details?id=com.jiguorder.customer");

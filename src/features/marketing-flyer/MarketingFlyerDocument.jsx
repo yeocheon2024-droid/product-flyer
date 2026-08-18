@@ -1,7 +1,4 @@
-import { isJiguorderPlayStoreUrl } from "./model.js";
-
-
-const RANGE_LABELS = ["쌀·잡곡", "김치·반찬", "계란", "공산품", "야채", "수산·축산"];
+import { FLYER_CATEGORY_ITEMS, isJiguorderPlayStoreUrl } from "./model.js";
 
 
 const formatPrice = (value) => {
@@ -29,13 +26,9 @@ const productValue = (product, ...keys) => {
 function BrandLockup({ inverse = false }) {
   return (
     <div className={`mkt-brand${inverse ? " mkt-brand--inverse" : ""}`}>
-      <span className="mkt-brand__mark" aria-hidden="true">
-        <i />
-        <b>J</b>
-      </span>
       <span className="mkt-brand__copy">
         <strong>지구농산</strong>
-        <small>FOODSERVICE PARTNER</small>
+        <small>식자재 공급 파트너</small>
       </span>
     </div>
   );
@@ -57,11 +50,12 @@ function QrCode({ qrDataUrl, label }) {
 }
 
 
-function ProductCard({ product, featured }) {
+function ProductCard({ product }) {
   const name = productValue(product, "flyerName", "name", "display_name") || "추천 상품";
   const spec = productValue(product, "flyerSpec", "spec");
   const origin = productValue(product, "originNote");
-  const badge = productValue(product, "heroBadge", "badge") || "이번 주 추천";
+  const badge = productValue(product, "heroBadge", "badge");
+  const category = productValue(product, "category", "major_name") || "이번 주 특가";
   const basePrice = productValue(product, "basePrice", "sell");
   const flyerPrice = productValue(product, "flyerPrice") || basePrice;
   const imageUrl = productValue(product, "asset", "imageUrl", "image_url");
@@ -74,9 +68,7 @@ function ProductCard({ product, featured }) {
 
   return (
     <article
-      className={`mkt-product${featured ? " mkt-product--featured" : ""}${
-        product.placeholder ? " mkt-product--placeholder" : ""
-      }`}
+      className={`mkt-product${product.placeholder ? " mkt-product--placeholder" : ""}`}
     >
       <div className="mkt-product__media">
         <span className="mkt-product__fallback" aria-hidden="true">
@@ -90,11 +82,11 @@ function ProductCard({ product, featured }) {
             onError={revealImageFallback}
           />
         ) : null}
-        <span className="mkt-product__badge">{badge}</span>
-        {discountRate > 0 ? <strong className="mkt-product__discount">-{discountRate}%</strong> : null}
+        {badge ? <span className="mkt-product__badge">{badge}</span> : null}
+        {discountRate > 0 ? <strong className="mkt-product__discount">{discountRate}% 할인</strong> : null}
       </div>
       <div className="mkt-product__copy">
-        <p className="mkt-product__kicker">업장용 엄선 품목</p>
+        <p className="mkt-product__kicker">{category}</p>
         <h2>{name}</h2>
         <p className="mkt-product__meta">{[origin, spec].filter(Boolean).join(" · ")}</p>
         {original > special ? (
@@ -112,9 +104,9 @@ function ProductCard({ product, featured }) {
 }
 
 
-function RangeThumb({ thumb, index }) {
+function RangeThumb({ thumb, category, index }) {
   const imageUrl = typeof thumb === "string" ? thumb : thumb?.asset || thumb?.imageUrl;
-  const label = typeof thumb === "object" && thumb?.label ? thumb.label : RANGE_LABELS[index];
+  const label = category?.label || "다양한 품목";
 
   return (
     <div className="mkt-range-thumb">
@@ -188,19 +180,18 @@ export function MarketingFlyerDocument({ template, qrDataUrl }) {
       <section className="flyer-a4 mkt-page mkt-page--front" data-export-page="front" aria-label="홍보 전단 앞면">
         <header className="mkt-front-hero">
           <div className="mkt-front-hero__topline">
-            <BrandLockup inverse />
+            <BrandLockup />
             <span className="mkt-status-pill">{frontPage.statusPill || "사업자 전용 특가"}</span>
           </div>
           <div className="mkt-front-hero__copy">
-            <p>오늘 필요한 식자재, 내일 매장 앞으로</p>
-            <h1>{frontPage.headline || "매일 쓰는 식자재, 가격부터 다릅니다"}</h1>
+            <p>지구농산 주간 공급가 안내</p>
+            <h1>{frontPage.headline || "이번 주 식자재 특가"}</h1>
           </div>
           <div className="mkt-front-hero__seal">
-            <small>현재 취급</small>
+            <small>전체 취급 품목</small>
             <strong>{totalCount ? totalCount.toLocaleString("ko-KR") : "900+"}</strong>
-            <span>ITEMS</span>
+            <span>종</span>
           </div>
-          <span className="mkt-front-hero__stamp" aria-hidden="true">WHOLESALE · FRESH · DIRECT</span>
         </header>
 
         <main className="mkt-front-content">
@@ -209,7 +200,6 @@ export function MarketingFlyerDocument({ template, qrDataUrl }) {
               <ProductCard
                 key={product.code || `${productValue(product, "flyerName", "name")}-${index}`}
                 product={product}
-                featured={index < 2}
               />
             ))}
           </section>
@@ -217,7 +207,7 @@ export function MarketingFlyerDocument({ template, qrDataUrl }) {
           <section className="mkt-range-panel" aria-label="취급 품목 안내">
             <div className="mkt-range-panel__heading">
               <div>
-                <span>ONE STOP FOOD SUPPLY</span>
+                <span>취급 카테고리</span>
                 <h2>공산품부터 매일 경매 야채까지</h2>
               </div>
               <p>
@@ -227,12 +217,17 @@ export function MarketingFlyerDocument({ template, qrDataUrl }) {
               </p>
             </div>
             <div className="mkt-range-panel__thumbs">
-              {RANGE_LABELS.map((_, index) => (
-                <RangeThumb key={RANGE_LABELS[index]} thumb={rangeThumbs[index]} index={index} />
+              {FLYER_CATEGORY_ITEMS.map((category, index) => (
+                <RangeThumb
+                  key={category.label}
+                  thumb={rangeThumbs[index] || category.asset}
+                  category={category}
+                  index={index}
+                />
               ))}
             </div>
             <div className="mkt-range-panel__line">
-              <span>{rangeSummary.categoryLine || "쌀 · 김치 · 계란 · 고춧가루 · 공산품 · 야채 외 다양한 식자재"}</span>
+              <span>{rangeSummary.categoryLine || "쌀·잡곡 · 김치·반찬 · 계란 · 고추가루 · 공산품 · 야채"}</span>
               <strong>필요한 품목을 한 번에</strong>
             </div>
           </section>

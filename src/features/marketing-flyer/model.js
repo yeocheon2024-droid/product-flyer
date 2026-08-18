@@ -48,14 +48,20 @@ const DEFAULT_STEPS = Object.freeze([
   Object.freeze({ title: "주문 확인·완료", body: "배송정보와 마감시간을 확인한 뒤 주문을 완료합니다." }),
 ]);
 
-const DEFAULT_RANGE_THUMBS = Object.freeze([
-  "/marketing-flyer/assets/sugar.png",
-  "/marketing-flyer/assets/ketchup.png",
-  "/marketing-flyer/assets/seaweed.png",
-  "/marketing-flyer/assets/green_onion.png",
-  "/marketing-flyer/assets/onion.png",
-  "/marketing-flyer/assets/mushroom.png",
+export const FLYER_CATEGORY_ITEMS = Object.freeze([
+  Object.freeze({ label: "쌀·잡곡", asset: "/marketing-flyer/assets/rice_calrose.png" }),
+  Object.freeze({ label: "김치·반찬", asset: "/marketing-flyer/assets/kimchi_dongsung.png" }),
+  Object.freeze({ label: "계란", asset: "/marketing-flyer/assets/eggs_special.png" }),
+  Object.freeze({ label: "고추가루", asset: "/marketing-flyer/assets/chili_powder.png" }),
+  Object.freeze({ label: "공산품", asset: "/marketing-flyer/assets/ketchup.png" }),
+  Object.freeze({ label: "야채", asset: "/marketing-flyer/assets/green_onion.png" }),
 ]);
+
+const DEFAULT_RANGE_THUMBS = Object.freeze(
+  FLYER_CATEGORY_ITEMS.map((category) => category.asset),
+);
+const DEFAULT_CATEGORY_LINE = "쌀·잡곡 · 김치·반찬 · 계란 · 고추가루 · 공산품 · 야채";
+const LEGACY_CATEGORY_LINE = "쌀·김치·계란·고춧가루·소스·냉동·면류·통조림·농산물";
 
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/g;
 export function normalizeText(value, fallback = "", maxLength = 180) {
@@ -270,6 +276,11 @@ export function buildTemplateFromCatalog(products = [], overrides = {}) {
   const heroOverrides = frontOverrides.heroProducts ?? overrides.heroProducts ?? {};
   const qrTargetUrl = normalizeQrTargetUrl(overrides.qrTargetUrl);
   const qrCopy = defaultQrCopyForUrl(qrTargetUrl);
+  const savedCategoryLine = normalizeText(
+    rangeOverrides.categoryLine,
+    DEFAULT_CATEGORY_LINE,
+    100,
+  );
 
   return {
     schemaVersion: 1,
@@ -286,7 +297,7 @@ export function buildTemplateFromCatalog(products = [], overrides = {}) {
     frontPage: {
       headline: normalizeText(
         frontOverrides.headline,
-        "매일 쓰는 식자재, 가격부터 확 낮췄습니다!",
+        "이번 주 식자재 특가",
         60,
       ),
       statusPill: normalizeText(frontOverrides.statusPill, "가격 검토용 초안", 24),
@@ -295,17 +306,13 @@ export function buildTemplateFromCatalog(products = [], overrides = {}) {
         goodsCount: normalizeCount(rangeOverrides.goodsCount, stats.goodsCount),
         vegetableCount: normalizeCount(rangeOverrides.vegetableCount, stats.vegetableCount),
         totalCount: normalizeCount(rangeOverrides.totalCount, stats.totalCount),
-        categoryLine: normalizeText(
-          rangeOverrides.categoryLine,
-          "쌀·김치·계란·고춧가루·소스·냉동·면류·통조림·농산물",
-          100,
-        ),
-        thumbAssets: (Array.isArray(rangeOverrides.thumbAssets)
-          ? rangeOverrides.thumbAssets
-          : DEFAULT_RANGE_THUMBS
-        )
-          .slice(0, 6)
-          .map((asset) => normalizeImageUrl(asset)),
+        categoryLine: savedCategoryLine === LEGACY_CATEGORY_LINE
+          ? DEFAULT_CATEGORY_LINE
+          : savedCategoryLine,
+        // Category artwork is part of the fixed flyer layout. Keeping this
+        // canonical also migrates JSON files saved before the six labels were
+        // aligned with their photographs.
+        thumbAssets: DEFAULT_RANGE_THUMBS.map((asset) => normalizeImageUrl(asset)),
       },
       cta: {
         pill: normalizeText(
