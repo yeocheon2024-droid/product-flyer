@@ -106,6 +106,9 @@ function pickGroupBy(products: Product[]): GroupBy {
 /** 대분류 일괄 생성에서 "전체 대분류" 선택값 */
 const ALL_MAJORS = '__ALL__';
 
+/** 작업 내용 자동 저장 키 (localStorage) — 선택 품목·순서·이름/가격 수정·레이아웃·설정. 새로고침·배포 후에도 유지. */
+const SAVE_KEY = 'flyer-work-v1';
+
 // ── Product Image Component ──
 function ProductImg({ product, className, style }: { product: Product; className?: string; style?: React.CSSProperties }) {
   const [err, setErr] = useState(false);
@@ -452,7 +455,7 @@ function ProductPicker({
   const linkStyle = (color: string): React.CSSProperties => ({ fontSize: '11px', fontWeight: 700, color, cursor: 'pointer', whiteSpace: 'nowrap' });
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: '#f3efe8', display: 'flex', flexDirection: 'column' }}>
+    <div className="no-print" style={{ position: 'fixed', inset: 0, zIndex: 9000, background: '#f3efe8', display: 'flex', flexDirection: 'column' }}>
       {/* 상단 바 */}
       <div style={{ height: '52px', background: '#78350f', color: '#fff', display: 'flex', alignItems: 'center', gap: '12px', padding: '0 20px', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
         <span style={{ fontSize: '15px', fontWeight: 800 }}>🔍 품목 고르기</span>
@@ -643,6 +646,8 @@ export default function FlyerPage() {
   const [priceEditValue, setPriceEditValue] = useState('');
 
   const flyerRef = useRef<HTMLDivElement>(null);
+  // 저장본 복원이 끝나기 전엔 자동 저장이 빈 상태로 덮어쓰지 않도록 막는다
+  const restoredRef = useRef(false);
 
   // ── Load Products ──
   useEffect(() => {
@@ -655,9 +660,64 @@ export default function FlyerPage() {
       const sellData = data.filter(p => p.sell > 0);
       setCategories(getMajorCategories(sellData));
       setMinorCategories(sortMinorsByOrder(getMinorCategories(sellData), order));
+
+      // ── 저장된 작업 복원 (2026-10-02) — 품목 DB 에 아직 있는 코드만 살린다 ──
+      try {
+        const raw = window.localStorage.getItem(SAVE_KEY);
+        if (raw) {
+          const s = JSON.parse(raw);
+          const codes = new Set(sellData.map(p => p.code));
+          const order2: string[] = Array.isArray(s.selectedOrder) ? s.selectedOrder.filter((c: unknown) => typeof c === 'string' && codes.has(c)) : [];
+          setSelectedOrder(order2);
+          setSelected(new Set(order2));
+          if (s.nameOverrides && typeof s.nameOverrides === 'object') setNameOverrides(s.nameOverrides);
+          if (s.priceOverrides && typeof s.priceOverrides === 'object') setPriceOverrides(s.priceOverrides);
+          if (typeof s.template === 'string') setTemplate(s.template as Template);
+          if (typeof s.theme === 'string') setTheme(s.theme as Theme);
+          if (typeof s.companyName === 'string') setCompanyName(s.companyName);
+          if (typeof s.subtitle === 'string') setSubtitle(s.subtitle);
+          if (typeof s.footerNote === 'string') setFooterNote(s.footerNote);
+          if (Array.isArray(s.selectedContacts)) setSelectedContacts(new Set(s.selectedContacts.filter((n: unknown) => typeof n === 'number')));
+          if (typeof s.flyerDate === 'string') setFlyerDate(s.flyerDate);
+          if (typeof s.showPrice === 'boolean') setShowPrice(s.showPrice);
+          if (s.coverSettings && typeof s.coverSettings === 'object') setCoverSettings(prev => ({ ...prev, ...s.coverSettings }));
+          if (typeof s.flyerCategoryLabel === 'string') setFlyerCategoryLabel(s.flyerCategoryLabel);
+          if (s.generated && order2.length > 0) setGenerated(true);
+        }
+      } catch (err) {
+        console.warn('저장된 작업 복원 실패:', err);
+      }
+      restoredRef.current = true;
       setLoading(false);
     })();
   }, []);
+
+  // ── 작업 자동 저장 (2026-10-02) — 바뀔 때마다 localStorage 에 기록. 배포·새로고침 후에도 그대로 이어서 작업 ──
+  useEffect(() => {
+    if (!restoredRef.current) return;
+    try {
+      window.localStorage.setItem(SAVE_KEY, JSON.stringify({
+        savedAt: new Date().toISOString(),
+        selectedOrder, nameOverrides, priceOverrides, template, theme, companyName, subtitle, footerNote,
+        selectedContacts: Array.from(selectedContacts), flyerDate, showPrice, coverSettings, flyerCategoryLabel, generated,
+      }));
+    } catch (err) {
+      console.warn('작업 자동 저장 실패:', err);
+    }
+  }, [selectedOrder, nameOverrides, priceOverrides, template, theme, companyName, subtitle, footerNote, selectedContacts, flyerDate, showPrice, coverSettings, flyerCategoryLabel, generated]);
+
+  /** 저장된 작업까지 지우고 처음부터 */
+  function clearSavedWork() {
+    if (!window.confirm('선택 품목·수정한 이름/가격·설정을 모두 지우고 처음부터 시작할까요?')) return;
+    try { window.localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
+    setSelected(new Set());
+    setSelectedOrder([]);
+    setNameOverrides({});
+    setPriceOverrides({});
+    setFlyerCategoryLabel('');
+    setGenerated(false);
+    showToast('작업을 초기화했습니다');
+  }
 
   // ── 딥링크: ?picker=1&major=공산품 이면 로딩 후 품목 고르기를 바로 연다 (북마크·검증용) ──
   useEffect(() => {
@@ -1057,16 +1117,16 @@ export default function FlyerPage() {
   // RENDER
   // ══════════════════════════════════════
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* ── Header ── */}
-      <header style={{
+    <div className="print-ancestor" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* ── Header ── (인쇄 시 .no-print 로 숨김, 미리보기 조상은 .print-ancestor 로 흐름 해제 — globals.css @media print) */}
+      <header className="no-print" style={{
         height: '52px', background: '#78350f', display: 'flex', alignItems: 'center',
         padding: '0 20px', gap: '12px', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       }}>
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.1</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.2</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
@@ -1076,9 +1136,9 @@ export default function FlyerPage() {
       </header>
 
       {/* ── Workspace ── */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div className="print-ancestor" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* ═══ LEFT PANEL ═══ */}
-        <div style={{
+        <div className="no-print" style={{
           width: '340px', flexShrink: 0, background: 'var(--panel)',
           borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
@@ -1305,7 +1365,7 @@ export default function FlyerPage() {
         </div>
 
         {/* ═══ MIDDLE PANEL ═══ */}
-        <div style={{
+        <div className="no-print" style={{
           width: '200px', flexShrink: 0, background: '#f7f4ef',
           borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column',
           overflowY: 'auto', padding: '14px 12px', gap: '16px',
@@ -1317,6 +1377,11 @@ export default function FlyerPage() {
               <div style={{ fontSize: '28px', fontWeight: 900, lineHeight: 1 }}>{selected.size}</div>
               <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '3px' }}>개 선택됨</div>
               <div style={{ fontSize: '10px', opacity: 0.6, marginTop: '6px' }}>권장: 10 ~ 30개</div>
+            </div>
+            {/* 작업 자동 저장 안내 + 초기화 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '10px', color: 'var(--muted)' }}>
+              <span title="선택 품목·순서·수정한 이름/가격·레이아웃·설정이 이 브라우저에 자동 저장됩니다. 새로고침해도 유지돼요.">💾 자동 저장 중</span>
+              <a style={{ fontWeight: 700, color: '#c0392b', cursor: 'pointer' }} onClick={clearSavedWork}>처음부터</a>
             </div>
             {selected.size > 0 && selected.size < 3 && template === 'COVER' && (
               <div style={{ background: '#fff3cd', border: '1px solid #ffc107', color: '#856404', borderRadius: '6px', padding: '8px', fontSize: '11px', textAlign: 'center', marginTop: '6px' }}>
@@ -1546,9 +1611,9 @@ export default function FlyerPage() {
         </div>
 
         {/* ═══ RIGHT PANEL: PREVIEW ═══ */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#e8dcc8' }}>
+        <div className="print-ancestor" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#e8dcc8' }}>
           {/* Preview Header */}
-          <div style={{
+          <div className="no-print" style={{
             background: 'var(--panel)', borderBottom: '1px solid var(--border)',
             padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0,
           }}>
@@ -1577,7 +1642,7 @@ export default function FlyerPage() {
           </div>
 
           {/* Preview Area (다중 페이지) */}
-          <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
+          <div className="print-ancestor" style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px' }}>
             <div
               ref={flyerRef}
               id="printArea"

@@ -42,6 +42,13 @@ NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 ```
 
+- **작업 자동 저장** (2026-10-02): 선택 품목·순서·이름/가격 수정·레이아웃·테마·설정이 localStorage `flyer-work-v1` 에
+  바뀔 때마다 저장되고, 다음 접속 때 품목 DB 에 남아 있는 코드만 복원된다 (배포·새로고침에도 유지). 선택 현황의 [처음부터]로 삭제.
+- **인쇄(window.print) 다중 페이지** (2026-10-02 수정): 예전 `body * visibility:hidden` + `#printArea position:fixed` 방식은
+  fixed 가 뷰포트 한 장 크기로 잘려 **첫 장만 인쇄**됐다. 지금은 헤더·패널에 `.no-print`(display:none), 미리보기 조상에
+  `.print-ancestor`(100vh·overflow:hidden·flex 해제)를 달아 `#printArea` 가 일반 흐름에서 `.flyer-a4` 마다 page-break 로 이어진다.
+  새 래퍼를 추가하면 클래스를 같이 달 것.
+
 ## 규칙
 1. QR코드 스캔 가능 여부 테스트 (PNG 다운로드 후 확인)
 2. 인쇄 해상도 유지 (html2canvas scale 설정 주의)

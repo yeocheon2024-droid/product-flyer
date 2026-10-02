@@ -543,18 +543,27 @@ body {
 @media print {
   @page { margin: 0; size: A4 portrait; }
 
-  /* visibility 방식: display:none은 자식까지 차단하지만 visibility:hidden은 자식이 override 가능 */
+  /* 2026-10-02: 예전엔 body * { visibility: hidden } + #printArea { position: fixed } 로 띄웠는데,
+     fixed 는 뷰포트(= 첫 장) 크기로 잘려 2페이지부터 인쇄되지 않았다.
+     이제 패널·헤더는 .no-print 로 display:none 하고, 미리보기 조상(.print-ancestor)의
+     100vh · overflow:hidden · flex 를 풀어 #printArea 가 일반 흐름에서 페이지마다 이어지게 한다. */
+  html, body { height: auto !important; overflow: visible !important; }
   body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
-  body * { visibility: hidden; }
-  #printArea, #printArea * { visibility: visible; }
-
+  .no-print { display: none !important; }
+  .print-ancestor {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+  }
   #printArea {
-    position: fixed;
-    top: 0;
-    left: 0;
+    position: static !important;
     width: 210mm;
+    margin: 0 !important;
     transform: none !important;
-    z-index: 99999;
   }
 
   /* A4 페이지 설정 */
