@@ -78,15 +78,27 @@ function getScaleVars(count: number, tmpl: Template): React.CSSProperties {
   return vars as React.CSSProperties;
 }
 
-function groupByCategory(products: Product[]): Record<string, Product[]> {
+// 가격표(E)·테이블형(L) 섹션 묶음 기준 — 기본은 대분류, 전단지 전체가 한 대분류뿐이면(대분류 일괄 생성) 중분류
+type GroupBy = 'major' | 'minor';
+
+function groupByCategory(products: Product[], groupBy: GroupBy = 'major'): Record<string, Product[]> {
   const groups: Record<string, Product[]> = {};
   products.forEach(p => {
-    const cat = p.major_name || '기타';
+    const cat = (groupBy === 'minor' ? p.minor_name : p.major_name) || '기타';
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(p);
   });
   return groups;
 }
+
+/** 전단지 전체가 한 대분류뿐이면 중분류로 섹션을 나눈다 (페이지마다 다르게 판단하지 않도록 전체 선택 기준) */
+function pickGroupBy(products: Product[]): GroupBy {
+  const majors = new Set(products.map(p => p.major_name || '기타'));
+  return majors.size === 1 && products.some(p => p.minor_name) ? 'minor' : 'major';
+}
+
+/** 대분류 일괄 생성에서 "전체 대분류" 선택값 */
+const ALL_MAJORS = '__ALL__';
 
 // ── Product Image Component ──
 function ProductImg({ product, className, style }: { product: Product; className?: string; style?: React.CSSProperties }) {
@@ -215,8 +227,8 @@ function RenderTemplateD({ products, showPrice }: { products: Product[]; showPri
   );
 }
 
-function RenderTemplateE({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
-  const groups = groupByCategory(products);
+function RenderTemplateE({ products, showPrice, groupBy = 'major' }: { products: Product[]; showPrice: boolean; groupBy?: GroupBy }) {
+  const groups = groupByCategory(products, groupBy);
   let num = 0;
   return (
     <div className="grid-e" style={getScaleVars(products.length, 'E')}>
@@ -270,8 +282,8 @@ function RenderTemplateF({ products, showPrice }: { products: Product[]; showPri
 }
 
 // ═══ TEMPLATE L: 테이블형 (Clean Table) ═══
-function RenderTemplateL({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
-  const groups = groupByCategory(products);
+function RenderTemplateL({ products, showPrice, groupBy = 'major' }: { products: Product[]; showPrice: boolean; groupBy?: GroupBy }) {
+  const groups = groupByCategory(products, groupBy);
   return (
     <div className="grid-l" style={getScaleVars(products.length, 'L')}>
       {Object.entries(groups).map(([cat, items]) => (
@@ -385,6 +397,9 @@ export default function FlyerPage() {
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
   const [showNoSell, setShowNoSell] = useState(false);
+  // 대분류 일괄 생성 — 드롭다운 선택값(대분류명 또는 ALL_MAJORS) / 생성된 전단지 제목에 붙일 대분류명
+  const [bulkMajor, setBulkMajor] = useState('');
+  const [flyerCategoryLabel, setFlyerCategoryLabel] = useState('');
 
   // ── Flyer Settings ──
   const [template, setTemplate] = useState<Template>('A');
@@ -470,6 +485,29 @@ export default function FlyerPage() {
     return matchCat && matchMinor && matchSearch;
   });
 
+  // ── 대분류 일괄 생성용 정렬 ──
+  // 대분류 순서 = 속한 중분류의 최소 category_order (ERP 순서, 없으면 뒤로) → 이름순
+  const minorRank = (minor: string) => (categoryOrder[minor] !== undefined ? categoryOrder[minor] : 9999);
+  const majorRank = (major: string) => {
+    let min = 9999;
+    products.forEach(p => { if ((p.major_name || '기타') === major && p.minor_name) min = Math.min(min, minorRank(p.minor_name)); });
+    return min;
+  };
+  const majorsOrdered = [...categories].sort((a, b) => majorRank(a) - majorRank(b) || a.localeCompare(b, 'ko'));
+  const countByMajor: Record<string, number> = {};
+  products.forEach(p => { const m = p.major_name || '기타'; countByMajor[m] = (countByMajor[m] || 0) + 1; });
+  // 한 대분류의 품목 전부 — 중분류 ERP 순서 → 품목 기존 순서(sort_order·이름, 자체매입 우선) 유지
+  function productsForMajor(major: string): Product[] {
+    return products
+      .map((p, idx) => ({ p, idx }))
+      .filter(({ p }) => (p.major_name || '기타') === major)
+      .sort((a, b) => minorRank(a.p.minor_name || '') - minorRank(b.p.minor_name || '') || a.idx - b.idx)
+      .map(({ p }) => p);
+  }
+  function productsForBulk(target: string): Product[] {
+    return target === ALL_MAJORS ? majorsOrdered.flatMap(productsForMajor) : productsForMajor(target);
+  }
+
   // ── Selected Products (순서 배열 기반) ──
   const selectedProducts = selectedOrder
     .map(code => products.find(p => p.code === code))
@@ -482,6 +520,7 @@ export default function FlyerPage() {
 
   // ── Actions ──
   function toggleSelect(code: string) {
+    setFlyerCategoryLabel(''); // 손으로 고치기 시작하면 더 이상 "대분류 전체" 전단지가 아니다
     setSelected(prev => {
       const next = new Set(prev);
       if (next.has(code)) {
@@ -495,6 +534,7 @@ export default function FlyerPage() {
     });
   }
   function selectAllFiltered() {
+    setFlyerCategoryLabel('');
     setSelected(prev => {
       const next = new Set(prev);
       const newCodes: string[] = [];
@@ -506,7 +546,7 @@ export default function FlyerPage() {
       return next;
     });
   }
-  function clearAll() { setSelected(new Set()); setSelectedOrder([]); }
+  function clearAll() { setSelected(new Set()); setSelectedOrder([]); setFlyerCategoryLabel(''); }
 
   function moveItem(code: string, direction: 'up' | 'down') {
     setSelectedOrder(prev => {
@@ -521,6 +561,7 @@ export default function FlyerPage() {
   }
 
   function removeItem(code: string) {
+    setFlyerCategoryLabel('');
     setSelected(prev => { const next = new Set(prev); next.delete(code); return next; });
     setSelectedOrder(ord => ord.filter(c => c !== code));
   }
@@ -566,6 +607,36 @@ export default function FlyerPage() {
     L: 25,    // table rows
     COVER: 12
   };
+
+  /**
+   * 대분류 일괄 생성 — 선택한 대분류(또는 전체 대분류)의 판매단가 품목을 전부 담아 바로 생성한다.
+   * 중분류 ERP 순서로 정렬되고, 현재 레이아웃의 페이지당 최대 수로 자동 분할된다.
+   */
+  function generateCategoryFlyer(target: string) {
+    if (!target) { showToast('대분류를 먼저 선택해 주세요'); return; }
+    if (template === 'COVER') { showToast('표지 레이아웃은 일괄 생성을 지원하지 않습니다. 다른 레이아웃을 고르세요'); return; }
+    const list = productsForBulk(target);
+    if (list.length === 0) { showToast('해당 대분류에 판매단가가 설정된 품목이 없습니다'); return; }
+    const max = TEMPLATE_MAX[template] || 20;
+    const pages = Math.ceil(list.length / max);
+    const label = target === ALL_MAJORS ? '전 품목' : target;
+    if (
+      pages > 20 &&
+      !window.confirm(
+        `${label} ${list.length}개 품목 → ${pages}페이지가 됩니다. 계속할까요?\n\n` +
+          '품목이 많을 땐 가격표(E, 50개/장)·테이블형(L, 25개/장) 레이아웃이 페이지 수가 적습니다.'
+      )
+    ) return;
+    const codes = list.map(p => p.code);
+    setSelected(new Set(codes));
+    setSelectedOrder(codes);
+    setActiveCategory(target === ALL_MAJORS ? '전체' : target);
+    setActiveMinor('전체');
+    setSearch('');
+    setFlyerCategoryLabel(label);
+    setGenerated(true);
+    showToast(`${label} 전단지 생성 완료! (${list.length}개 품목 · ${pages}페이지)`);
+  }
 
   function generateFlyer() {
     if (selected.size === 0) { showToast('품목을 선택해 주세요'); return; }
@@ -702,6 +773,16 @@ export default function FlyerPage() {
 
   function doPrint() { window.print(); }
 
+  // 전단지 머리 문구 — 대분류 일괄 생성이면 "쌀 가격표" 처럼 대분류명을 붙인다
+  const taglineText = flyerCategoryLabel
+    ? `${flyerCategoryLabel} ${showPrice ? '가격표' : '품목 안내'}`
+    : (showPrice ? '납품 가격표' : '품목 안내');
+  // 가격표(E)·테이블형(L) 섹션 기준 — 페이지마다 달라지지 않게 전체 선택 품목으로 한 번만 판단
+  const groupBy = pickGroupBy(selectedProducts);
+  // 대분류 일괄 생성 예상 페이지 수 (드롭다운 선택 + 현재 레이아웃 기준)
+  const bulkCount = bulkMajor ? productsForBulk(bulkMajor).length : 0;
+  const bulkPages = bulkCount > 0 ? Math.ceil(bulkCount / (TEMPLATE_MAX[template] || 20)) : 0;
+
   // ══════════════════════════════════════
   // RENDER
   // ══════════════════════════════════════
@@ -715,7 +796,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v3.9</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.0</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
@@ -826,6 +907,46 @@ export default function FlyerPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* 대분류 전단지 일괄 생성 — 대분류 하나(또는 전체)를 골라 그 품목 전부로 바로 생성 */}
+          <div style={{ borderBottom: '1px solid var(--border)', padding: '12px 16px', background: '#fdf6e9' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '8px' }}>
+              대분류 전단지 한번에 생성
+            </h3>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <select
+                value={bulkMajor}
+                onChange={e => setBulkMajor(e.target.value)}
+                disabled={loading}
+                style={{
+                  flex: 1, minWidth: 0, padding: '7px 8px', border: '1px solid var(--border)', borderRadius: '6px',
+                  fontFamily: 'inherit', fontSize: '12px', fontWeight: 600, background: 'var(--card-bg)', outline: 'none',
+                }}
+              >
+                <option value="">대분류 선택…</option>
+                <option value={ALL_MAJORS}>전체 대분류 ({products.length}개)</option>
+                {majorsOrdered.map(m => (
+                  <option key={m} value={m}>{m} ({countByMajor[m] || 0}개)</option>
+                ))}
+              </select>
+              <button
+                className="btn btn-orange"
+                disabled={!bulkMajor || loading || template === 'COVER'}
+                onClick={() => generateCategoryFlyer(bulkMajor)}
+                style={{ padding: '7px 12px', fontSize: '12px', whiteSpace: 'nowrap', opacity: !bulkMajor || loading || template === 'COVER' ? 0.5 : 1 }}
+                title="선택한 대분류의 품목 전부를 담아 전단지를 바로 생성합니다"
+              >
+                전체 생성
+              </button>
+            </div>
+            <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '6px', lineHeight: 1.45 }}>
+              {template === 'COVER'
+                ? '표지 레이아웃에선 쓸 수 없어요. 레이아웃을 먼저 고르세요.'
+                : bulkMajor
+                  ? `${bulkCount}개 품목 · 레이아웃 ${template} (${TEMPLATE_MAX[template]}개/장) → 예상 ${bulkPages}페이지. 중분류 순서로 담깁니다.`
+                  : '판매단가가 있는 품목 전부를 중분류 순서로 담아 자동으로 페이지를 나눕니다.'}
+            </div>
           </div>
 
           {/* List Header */}
@@ -1203,7 +1324,7 @@ export default function FlyerPage() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <div style={{ textAlign: 'right' }}>
-                            <div className="flyer-tagline">{template === 'COVER' ? '회사 소개' : (showPrice ? '납품 가격표' : '품목 안내')}</div>
+                            <div className="flyer-tagline">{template === 'COVER' ? '회사 소개' : taglineText}</div>
                             <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
                           </div>
                           <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=2&data=https://product-catalog-4qg.pages.dev" alt="QR" crossOrigin="anonymous" style={{ width: '64px', height: '64px', imageRendering: 'pixelated' as const }} />
@@ -1255,7 +1376,7 @@ export default function FlyerPage() {
                 }
 
                 // 일반 템플릿 (다중 페이지 자동 분할)
-                const RenderMap: Record<string, React.FC<{ products: Product[]; showPrice: boolean }>> = {
+                const RenderMap: Record<string, React.FC<{ products: Product[]; showPrice: boolean; groupBy?: GroupBy }>> = {
                   A: RenderTemplateA, B: RenderTemplateB, C: RenderTemplateC, D: RenderTemplateD,
                   E: RenderTemplateE, F: RenderTemplateF, L: RenderTemplateL,
                 };
@@ -1278,7 +1399,7 @@ export default function FlyerPage() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{ textAlign: 'right' }}>
-                          <div className="flyer-tagline">{showPrice ? '납품 가격표' : '품목 안내'}</div>
+                          <div className="flyer-tagline">{taglineText}</div>
                           <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>{flyerDate}</div>
                         </div>
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=2&data=https://product-catalog-4qg.pages.dev" alt="QR" crossOrigin="anonymous" style={{ width: '64px', height: '64px', imageRendering: 'pixelated' as const }} />
@@ -1287,7 +1408,7 @@ export default function FlyerPage() {
 
                     {/* Body */}
                     <div className="flyer-body">
-                      {TemplateRenderer && <TemplateRenderer products={chunk} showPrice={showPrice} />}
+                      {TemplateRenderer && <TemplateRenderer products={chunk} showPrice={showPrice} groupBy={groupBy} />}
                     </div>
 
                     {/* Footer */}
