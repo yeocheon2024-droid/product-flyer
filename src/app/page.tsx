@@ -385,6 +385,188 @@ interface CoverSettings {
 }
 
 // ══════════════════════════════════════
+// 품목 고르기 (전체 화면) — 2026-10-02
+// 좌측 340px 목록은 한눈에 안 보여서, 거래처 앱 상품 보기처럼 대분류 타일 → 중분류 칩 → 상품 카드 격자로
+// 넓게 펼쳐 보여준다. 카드를 누르면 선택/해제. 대분류 일괄 생성 뒤 "필요 없는 품목만 빼는" 용도가 핵심.
+// ══════════════════════════════════════
+const MAJOR_EMOJI: Record<string, string> = {
+  농산품: '🌾', '우유/계란': '🥚', 공산품: '🏭', 야채: '🥬', 수산품: '🦐', 축산품: '🥩', 기타: '🗂️',
+};
+
+function ProductPicker({
+  products, majors, countByMajor, minorRank, selected, initialMajor, template, templateMax,
+  nameOf, priceOf, onToggle, onSetMany, onGenerate, onClose,
+}: {
+  products: Product[];
+  majors: string[];
+  countByMajor: Record<string, number>;
+  minorRank: (minor: string) => number;
+  selected: Set<string>;
+  initialMajor: string;
+  template: Template;
+  templateMax: number;
+  nameOf: (p: Product) => string;
+  priceOf: (p: Product) => number;
+  onToggle: (code: string) => void;
+  onSetMany: (codes: string[], on: boolean) => void;
+  onGenerate: () => void;
+  onClose: () => void;
+}) {
+  const [major, setMajor] = useState(initialMajor || majors[0] || '');
+  const [minor, setMinor] = useState('전체');
+  const [q, setQ] = useState('');
+  const [onlySelected, setOnlySelected] = useState(false);
+
+  // Esc 로 닫기
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const majorOf = (p: Product) => p.major_name || '기타';
+  const minorOf = (p: Product) => p.minor_name || '기타';
+  const inMajor = products.filter(p => majorOf(p) === major);
+  const minors = Array.from(new Set(inMajor.map(minorOf)))
+    .sort((a, b) => minorRank(a) - minorRank(b) || a.localeCompare(b, 'ko'));
+  const selectedInMajor = inMajor.filter(p => selected.has(p.code)).length;
+  const selCountByMinor: Record<string, number> = {};
+  const totalByMinor: Record<string, number> = {};
+  inMajor.forEach(p => {
+    const m = minorOf(p);
+    totalByMinor[m] = (totalByMinor[m] || 0) + 1;
+    if (selected.has(p.code)) selCountByMinor[m] = (selCountByMinor[m] || 0) + 1;
+  });
+  const ql = q.trim().toLowerCase();
+  const visible = inMajor.filter(p =>
+    (minor === '전체' || minorOf(p) === minor) &&
+    (!onlySelected || selected.has(p.code)) &&
+    (!ql || p.name.toLowerCase().includes(ql) || (p.display_name || '').toLowerCase().includes(ql) || p.code.toLowerCase().includes(ql))
+  );
+  const sections = minors
+    .filter(m => minor === '전체' || m === minor)
+    .map(m => ({ minor: m, items: visible.filter(p => minorOf(p) === m) }))
+    .filter(s => s.items.length > 0);
+  const selByMajor = (m: string) => products.filter(p => majorOf(p) === m && selected.has(p.code)).length;
+  const pages = Math.ceil(selected.size / (templateMax || 20));
+  const linkStyle = (color: string): React.CSSProperties => ({ fontSize: '11px', fontWeight: 700, color, cursor: 'pointer', whiteSpace: 'nowrap' });
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: '#f3efe8', display: 'flex', flexDirection: 'column' }}>
+      {/* 상단 바 */}
+      <div style={{ height: '52px', background: '#78350f', color: '#fff', display: 'flex', alignItems: 'center', gap: '12px', padding: '0 20px', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+        <span style={{ fontSize: '15px', fontWeight: 800 }}>🔍 품목 고르기</span>
+        <span style={{ fontSize: '11px', opacity: 0.75 }}>카드를 누르면 선택/해제 · 필요 없는 품목은 체크를 풀어 빼세요</span>
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: '12px', fontWeight: 700 }}>
+          선택 {selected.size}개 · 레이아웃 {template} ({templateMax}개/장) → {pages}페이지
+        </span>
+        <button className="btn btn-orange" onClick={onGenerate} style={{ fontSize: '13px' }}>전단지 생성</button>
+        <button className="btn btn-print" onClick={onClose}>닫기 (Esc)</button>
+      </div>
+
+      {/* 대분류 타일 */}
+      <div style={{ display: 'flex', gap: '10px', padding: '12px 20px 8px', flexWrap: 'wrap', background: 'var(--panel)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        {majors.map(m => {
+          const active = m === major;
+          const sel = selByMajor(m);
+          return (
+            <div
+              key={m}
+              onClick={() => { setMajor(m); setMinor('전체'); }}
+              style={{
+                width: '104px', textAlign: 'center', cursor: 'pointer', padding: '8px 4px', borderRadius: '10px',
+                border: active ? '2px solid var(--accent)' : '1px solid var(--border)', background: active ? '#fef3c7' : '#fff',
+              }}
+            >
+              <div style={{ width: '48px', height: '48px', margin: '0 auto 4px', borderRadius: '50%', background: '#f7f4ef', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                {MAJOR_EMOJI[m] || '🗂️'}
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: active ? 'var(--accent)' : '#333' }}>{m}</div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: sel > 0 ? 'var(--accent2)' : 'var(--muted)' }}>{sel} / {countByMajor[m] || 0}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 중분류 칩 + 도구 */}
+      <div style={{ padding: '8px 20px', background: 'var(--panel)', borderBottom: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 6px', flexShrink: 0 }}>
+        <div className={`cat-tab ${minor === '전체' ? 'active' : ''}`} onClick={() => setMinor('전체')}>
+          전체 {selectedInMajor}/{inMajor.length}
+        </div>
+        {minors.map(m => (
+          <div key={m} className={`cat-tab ${minor === m ? 'active' : ''}`} onClick={() => setMinor(m)}>
+            {m} <span style={{ opacity: 0.7 }}>{selCountByMinor[m] || 0}/{totalByMinor[m]}</span>
+          </div>
+        ))}
+        <div style={{ flex: 1 }} />
+        <input
+          value={q} onChange={e => setQ(e.target.value)} placeholder="이 대분류에서 검색…"
+          style={{ padding: '5px 10px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '12px', fontFamily: 'inherit', outline: 'none', width: '180px', background: '#fff' }}
+        />
+        <label style={{ fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', userSelect: 'none' }}>
+          <input type="checkbox" checked={onlySelected} onChange={e => setOnlySelected(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
+          선택한 것만
+        </label>
+        <a style={linkStyle('var(--accent)')} onClick={() => onSetMany(visible.map(p => p.code), true)}>보이는 것 전체 선택</a>
+        <a style={linkStyle('#c0392b')} onClick={() => onSetMany(visible.map(p => p.code), false)}>보이는 것 전체 해제</a>
+      </div>
+
+      {/* 중분류 섹션 → 상품 카드 격자 */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 40px' }}>
+        {sections.length === 0 ? (
+          <div style={{ textAlign: 'center', color: 'var(--muted)', padding: '60px 0', fontSize: '13px' }}>표시할 품목이 없습니다</div>
+        ) : sections.map(s => (
+          <div key={s.minor} style={{ marginBottom: '18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '4px 0 8px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800 }}>{s.minor}</span>
+              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>
+                선택 {s.items.filter(p => selected.has(p.code)).length} / {s.items.length}
+              </span>
+              <a style={linkStyle('var(--accent)')} onClick={() => onSetMany(s.items.map(p => p.code), true)}>전체 선택</a>
+              <a style={linkStyle('#c0392b')} onClick={() => onSetMany(s.items.map(p => p.code), false)}>전체 해제</a>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px' }}>
+              {s.items.map(p => {
+                const sel = selected.has(p.code);
+                const url = getImageUrl(p);
+                return (
+                  <div
+                    key={p.code}
+                    onClick={() => onToggle(p.code)}
+                    title={sel ? '클릭하면 전단지에서 뺍니다' : '클릭하면 전단지에 넣습니다'}
+                    style={{
+                      position: 'relative', background: '#fff', borderRadius: '10px', padding: '8px', cursor: 'pointer', userSelect: 'none',
+                      border: sel ? '2px solid var(--accent)' : '1px solid var(--border)', opacity: sel ? 1 : 0.45,
+                    }}
+                  >
+                    <input type="checkbox" checked={sel} readOnly style={{ position: 'absolute', top: '8px', left: '8px', width: '18px', height: '18px', accentColor: 'var(--accent)', pointerEvents: 'none', zIndex: 1 }} />
+                    {p.sold_out && (
+                      <span style={{ position: 'absolute', top: '8px', right: '8px', background: '#dc2626', color: '#fff', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '3px', zIndex: 1 }}>품절</span>
+                    )}
+                    <div style={{ height: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '6px' }}>
+                      {url ? (
+                        <img src={url} alt="" loading="lazy" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                          onError={e => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }} />
+                      ) : (
+                        <span style={{ fontSize: '11px', color: '#bbb' }}>No img</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, lineHeight: 1.3, height: '31px', overflow: 'hidden', wordBreak: 'break-all' }}>{nameOf(p)}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minHeight: '13px' }}>{p.spec || ''}</div>
+                    <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--accent2)', marginTop: '3px' }}>{formatPrice(priceOf(p))}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════
 // MAIN PAGE
 // ══════════════════════════════════════
 export default function FlyerPage() {
@@ -406,6 +588,9 @@ export default function FlyerPage() {
   // 대분류 일괄 생성 — 드롭다운 선택값(대분류명 또는 ALL_MAJORS) / 생성된 전단지 제목에 붙일 대분류명
   const [bulkMajor, setBulkMajor] = useState('');
   const [flyerCategoryLabel, setFlyerCategoryLabel] = useState('');
+  // 품목 고르기(전체 화면) 열림 여부 / 처음 보여줄 대분류 탭
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMajor, setPickerMajor] = useState('');
 
   // ── Flyer Settings ──
   const [template, setTemplate] = useState<Template>('A');
@@ -473,6 +658,14 @@ export default function FlyerPage() {
       setLoading(false);
     })();
   }, []);
+
+  // ── 딥링크: ?picker=1&major=공산품 이면 로딩 후 품목 고르기를 바로 연다 (북마크·검증용) ──
+  useEffect(() => {
+    if (loading || products.length === 0) return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('picker') === '1') openPicker(sp.get('major') || undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   // ── Filtered Products ──
   // 현재 대분류에 해당하는 중분류 목록 (ERP category_order 기준 정렬)
@@ -553,6 +746,75 @@ export default function FlyerPage() {
     });
   }
   function clearAll() { setSelected(new Set()); setSelectedOrder([]); setFlyerCategoryLabel(''); }
+
+  /** 여러 품목 한꺼번에 선택/해제 (품목 고르기 화면용) — 순서 배열은 뒤에 붙이거나 빼기만 한다 */
+  function setManySelected(codes: string[], on: boolean) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      codes.forEach(c => { if (on) next.add(c); else next.delete(c); });
+      return next;
+    });
+    setSelectedOrder(prev => {
+      if (on) {
+        const have = new Set(prev);
+        return [...prev, ...codes.filter(c => !have.has(c))];
+      }
+      const rm = new Set(codes);
+      return prev.filter(c => !rm.has(c));
+    });
+  }
+
+  /** 선택 품목이 한 대분류뿐이면 그 이름, 전 품목이면 '전 품목', 섞였으면 '' (전단지 머리 문구용) */
+  function labelForSelection(codes: Set<string>): string {
+    const majors = new Set<string>();
+    products.forEach(p => { if (codes.has(p.code)) majors.add(p.major_name || '기타'); });
+    if (majors.size === 1) return Array.from(majors)[0];
+    if (products.length > 0 && codes.size >= products.length) return '전 품목';
+    return '';
+  }
+
+  /** 품목 고르기 열기 — target(대분류 또는 ALL_MAJORS)이 있으면 그 품목을 전부 선택한 상태로 시작 */
+  function openPicker(target?: string) {
+    if (target) {
+      const codes = productsForBulk(target).map(p => p.code);
+      if (codes.length === 0) { showToast('해당 대분류에 판매단가가 설정된 품목이 없습니다'); return; }
+      setSelected(new Set(codes));
+      setSelectedOrder(codes);
+      setFlyerCategoryLabel(target === ALL_MAJORS ? '전 품목' : target);
+      setPickerMajor(target === ALL_MAJORS ? (majorsOrdered[0] || '') : target);
+    } else {
+      // 현재 선택 그대로 — 선택이 있으면 첫 품목의 대분류 탭부터
+      const first = selectedProducts[0];
+      setPickerMajor(first ? (first.major_name || '기타') : (majorsOrdered[0] || ''));
+    }
+    setPickerOpen(true);
+  }
+
+  /** 품목 고르기에서 생성 — 분류 순서(대분류 → 중분류 → 품목)로 정렬해 바로 생성 */
+  function generateFromPicker() {
+    if (selected.size === 0) { showToast('품목을 선택해 주세요'); return; }
+    if (template === 'COVER') { showToast('표지 레이아웃은 품목 고르기 생성을 지원하지 않습니다. 다른 레이아웃을 고르세요'); return; }
+    const rank: Record<string, number> = {};
+    majorsOrdered.forEach((m, i) => { rank[m] = i; });
+    const majorIdx = (p: Product) => { const r = rank[p.major_name || '기타']; return r === undefined ? 99 : r; };
+    const ordered = products
+      .map((p, idx) => ({ p, idx }))
+      .filter(({ p }) => selected.has(p.code))
+      .sort((a, b) =>
+        majorIdx(a.p) - majorIdx(b.p) ||
+        minorRank(a.p.minor_name || '') - minorRank(b.p.minor_name || '') ||
+        a.idx - b.idx
+      )
+      .map(({ p }) => p.code);
+    setSelectedOrder(ordered);
+    const label = labelForSelection(selected);
+    setFlyerCategoryLabel(label);
+    if (label && label !== '전 품목') { setActiveCategory(label); setActiveMinor('전체'); }
+    setPickerOpen(false);
+    setGenerated(true);
+    const pages = Math.ceil(ordered.length / (TEMPLATE_MAX[template] || 20));
+    showToast(`전단지 생성 완료! (${ordered.length}개 품목 · ${pages}페이지)`);
+  }
 
   function moveItem(code: string, direction: 'up' | 'down') {
     setSelectedOrder(prev => {
@@ -646,6 +908,8 @@ export default function FlyerPage() {
 
   function generateFlyer() {
     if (selected.size === 0) { showToast('품목을 선택해 주세요'); return; }
+    // 품목 고르기에서 다른 대분류를 섞었을 수 있으니 머리 문구를 현재 선택 기준으로 다시 맞춘다
+    if (flyerCategoryLabel) setFlyerCategoryLabel(labelForSelection(selected));
     const max = TEMPLATE_MAX[template] || 20;
     const totalPages = Math.ceil(selectedProducts.length / max);
     setGenerated(true);
@@ -802,7 +1066,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.0</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.1</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
@@ -946,6 +1210,16 @@ export default function FlyerPage() {
                 전체 생성
               </button>
             </div>
+            {/* 전부 담은 뒤 필요 없는 품목만 빼고 싶을 때 — 전체 화면 품목 고르기로 */}
+            <button
+              className="btn btn-white"
+              disabled={!bulkMajor || loading}
+              onClick={() => openPicker(bulkMajor)}
+              style={{ width: '100%', marginTop: '6px', padding: '7px 10px', fontSize: '12px', border: '1px solid var(--accent)', opacity: !bulkMajor || loading ? 0.5 : 1 }}
+              title="선택한 대분류 품목을 전부 담은 채 크게 펼쳐 보고, 필요 없는 품목만 빼고 생성합니다"
+            >
+              🔍 크게 보고 고르기 (필요 없는 품목 빼기)
+            </button>
             <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '6px', lineHeight: 1.45 }}>
               {template === 'COVER'
                 ? '표지 레이아웃에선 쓸 수 없어요. 레이아웃을 먼저 고르세요.'
@@ -959,6 +1233,7 @@ export default function FlyerPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 4px' }}>
             <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>품목 목록</span>
             <div style={{ display: 'flex', gap: '8px' }}>
+              <a style={{ fontSize: '11px', fontWeight: 700, color: '#1d5537', cursor: 'pointer' }} onClick={() => openPicker()} title="현재 선택 그대로 전체 화면에서 크게 보기">🔍 크게 보기</a>
               <a style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent)', cursor: 'pointer' }} onClick={selectAllFiltered}>전체 선택</a>
               <a style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', cursor: 'pointer' }} onClick={clearAll}>전체 해제</a>
             </div>
@@ -1436,6 +1711,26 @@ export default function FlyerPage() {
           </div>
         </div>
       </div>
+
+      {/* ── 품목 고르기 (전체 화면) ── */}
+      {pickerOpen && (
+        <ProductPicker
+          products={products}
+          majors={majorsOrdered}
+          countByMajor={countByMajor}
+          minorRank={minorRank}
+          selected={selected}
+          initialMajor={pickerMajor}
+          template={template}
+          templateMax={TEMPLATE_MAX[template] || 20}
+          nameOf={p => nameOverrides[p.code] || p.display_name || p.name}
+          priceOf={p => priceOverrides[p.code] ?? p.sell}
+          onToggle={code => setManySelected([code], !selected.has(code))}
+          onSetMany={setManySelected}
+          onGenerate={generateFromPicker}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
 
       {/* ── Edit Modal ── */}
       {editModal && (
