@@ -58,10 +58,16 @@ function getScaleVars(count: number, tmpl: Template): React.CSSProperties {
     else if (count <= 12) { vars['--card-img-h'] = '100px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '5px'; }
     else { vars['--card-img-h'] = '75px'; vars['--card-name-fs'] = '9px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '4px'; }
   } else if (tmpl === 'D') {
+    // 본문 가용 높이 ≈ 949px (1123 − 헤더 99 − 푸터 43 − 패딩 32). 카드 높이 = 썸네일×1.3 + 테두리 2.
+    // 18개까지는 예전 그대로(2열). 그 위로는 빈 공간을 채우도록 썸네일을 줄이고, 26개 넘으면 3열로 전환 (2026-10-02).
     if (count <= 6) { vars['--thumb-size'] = '120px'; vars['--card-name-fs'] = '14px'; vars['--card-price-fs'] = '22px'; vars['--card-gap'] = '10px'; }
     else if (count <= 10) { vars['--thumb-size'] = '90px'; vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '18px'; vars['--card-gap'] = '6px'; }
     else if (count <= 14) { vars['--thumb-size'] = '70px'; vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '15px'; vars['--card-gap'] = '4px'; }
-    else { vars['--thumb-size'] = '55px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '3px'; }
+    else if (count <= 18) { vars['--thumb-size'] = '55px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '14px'; vars['--card-gap'] = '3px'; }
+    // 2열 × 13행: 카드 ≈ 68px → 13×68 + 12×3 = 920px
+    else if (count <= 26) { vars['--thumb-size'] = '50px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '3px'; vars['--card-pad'] = '4px 8px'; }
+    // 3열 × 13행: 카드 ≈ 67px → 13×67 + 12×3 = 907px (헤드리스 스크린샷으로 푸터 위 여유 확인함)
+    else { vars['--d-cols'] = '3'; vars['--thumb-size'] = '50px'; vars['--card-name-fs'] = '10px'; vars['--card-price-fs'] = '13px'; vars['--card-gap'] = '3px'; vars['--card-pad'] = '4px 8px'; }
   } else if (tmpl === 'E') {
     if (count <= 20) { vars['--card-name-fs'] = '12px'; vars['--card-price-fs'] = '14px'; vars['--card-pad'] = '6px 3px'; }
     else if (count <= 40) { vars['--card-name-fs'] = '11px'; vars['--card-price-fs'] = '13px'; vars['--card-pad'] = '4px 3px'; }
@@ -601,7 +607,7 @@ export default function FlyerPage() {
     A: 10,    // 2col × 5row
     B: 18,    // list rows
     C: 15,    // 3col × 5row
-    D: 18,    // 2col × 9row, horizontal cards
+    D: 39,    // 3col × 13row (18개 이하 2열 9행 그대로, 26개까지 2열 13행, 그 위 3열) — 2026-10-02 빈 공간 채우기
     E: 50,    // 2col compact table
     F: 3,     // 1col large showcase cards
     L: 25,    // table rows

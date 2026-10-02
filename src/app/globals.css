@@ -309,7 +309,8 @@ body {
 /* ═══ TEMPLATE D: Split Layout ═══ */
 .grid-d {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* 기본 2열. 품목이 26개를 넘으면 getScaleVars 가 --d-cols: 3 으로 3열 전환 (2026-10-02) */
+  grid-template-columns: repeat(var(--d-cols, 2), 1fr);
   gap: var(--card-gap, 10px);
   height: 100%;
   align-content: start;
