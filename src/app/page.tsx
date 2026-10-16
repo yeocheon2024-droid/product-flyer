@@ -153,7 +153,25 @@ function SoldOutBadge() {
 // TEMPLATE RENDERERS
 // ══════════════════════════════════════
 
-function RenderTemplateA({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
+/** 미리보기 가격을 누르면 전단지용 가격 수정 (2026-10-16). 없으면(인쇄·캡처 등) 평범한 글자. */
+type PriceClick = ((p: Product) => void) | undefined;
+type TemplateProps = { products: Product[]; showPrice: boolean; groupBy?: GroupBy; onPriceClick?: PriceClick };
+
+/** 가격 글자 스타일 — 품절은 취소선, 클릭 수정이 가능하면 포인터 커서 */
+function priceStyle(p: Product, onClick: PriceClick): React.CSSProperties {
+  return {
+    ...(p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}),
+    ...(onClick ? { cursor: 'pointer' } : {}),
+  };
+}
+/** 가격 글자 클릭 핸들러 (html2canvas 캡처·인쇄에는 영향 없음) */
+function priceClick(p: Product, onClick: PriceClick) {
+  return onClick
+    ? { onClick: (e: React.MouseEvent) => { e.stopPropagation(); onClick(p); }, title: '클릭하여 전단지용 가격 수정' }
+    : {};
+}
+
+function RenderTemplateA({ products, showPrice, onPriceClick }: TemplateProps) {
   return (
     <div className="grid-a" style={getScaleVars(products.length, 'A')}>
       {products.map((p, i) => (
@@ -163,7 +181,7 @@ function RenderTemplateA({ products, showPrice }: { products: Product[]; showPri
           <div className="card-body">
             <div className="card-name">{p.name}</div>
             {p.spec && <div className="card-spec">{p.spec}</div>}
-            {showPrice && <div className="card-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+            {showPrice && <div className="card-price" style={priceStyle(p, onPriceClick)} {...priceClick(p, onPriceClick)}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
           </div>
         </div>
       ))}
@@ -171,7 +189,7 @@ function RenderTemplateA({ products, showPrice }: { products: Product[]; showPri
   );
 }
 
-function RenderTemplateB({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
+function RenderTemplateB({ products, showPrice, onPriceClick }: TemplateProps) {
   return (
     <div className="grid-b" style={getScaleVars(products.length, 'B')}>
       {products.map((p, i) => (
@@ -185,14 +203,14 @@ function RenderTemplateB({ products, showPrice }: { products: Product[]; showPri
             <div className="b-name">{p.name}</div>
             {p.spec && <div className="b-spec">{p.spec}</div>}
           </div>
-          {showPrice && <div className="b-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+          {showPrice && <div className="b-price" style={priceStyle(p, onPriceClick)} {...priceClick(p, onPriceClick)}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
         </div>
       ))}
     </div>
   );
 }
 
-function RenderTemplateC({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
+function RenderTemplateC({ products, showPrice, onPriceClick }: TemplateProps) {
   const rows = Math.ceil(products.length / 3);
   return (
     <div className="grid-c" style={{
@@ -206,7 +224,7 @@ function RenderTemplateC({ products, showPrice }: { products: Product[]; showPri
           <div className="c-body">
             <div className="c-name">{p.name}</div>
             {p.spec && <div className="c-spec">{p.spec}</div>}
-            {showPrice && <div className="c-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+            {showPrice && <div className="c-price" style={priceStyle(p, onPriceClick)} {...priceClick(p, onPriceClick)}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
           </div>
         </div>
       ))}
@@ -214,7 +232,7 @@ function RenderTemplateC({ products, showPrice }: { products: Product[]; showPri
   );
 }
 
-function RenderTemplateD({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
+function RenderTemplateD({ products, showPrice, onPriceClick }: TemplateProps) {
   return (
     <div className="grid-d" style={getScaleVars(products.length, 'D')}>
       {products.map((p, i) => (
@@ -228,7 +246,7 @@ function RenderTemplateD({ products, showPrice }: { products: Product[]; showPri
               <div className="d-name">{p.name}</div>
               {p.spec && <div className="d-spec">{p.spec}</div>}
             </div>
-            {showPrice && <div className="d-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+            {showPrice && <div className="d-price" style={priceStyle(p, onPriceClick)} {...priceClick(p, onPriceClick)}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
           </div>
         </div>
       ))}
@@ -236,7 +254,7 @@ function RenderTemplateD({ products, showPrice }: { products: Product[]; showPri
   );
 }
 
-function RenderTemplateE({ products, showPrice, groupBy = 'major' }: { products: Product[]; showPrice: boolean; groupBy?: GroupBy }) {
+function RenderTemplateE({ products, showPrice, groupBy = 'major', onPriceClick }: TemplateProps) {
   const groups = groupByCategory(products, groupBy);
   let num = 0;
   return (
@@ -260,7 +278,7 @@ function RenderTemplateE({ products, showPrice, groupBy = 'major' }: { products:
                   {p.spec && <div className="e-spec">{p.spec}</div>}
                 </div>
                 <div className="e-dots" />
-                {showPrice && <div className="e-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell)}</div>}
+                {showPrice && <div className="e-price" style={priceStyle(p, onPriceClick)} {...priceClick(p, onPriceClick)}>{formatPrice(p.sell)}</div>}
               </div>
             );
           })}
@@ -270,7 +288,7 @@ function RenderTemplateE({ products, showPrice, groupBy = 'major' }: { products:
   );
 }
 
-function RenderTemplateF({ products, showPrice }: { products: Product[]; showPrice: boolean }) {
+function RenderTemplateF({ products, showPrice, onPriceClick }: TemplateProps) {
   return (
     <div className="grid-f" style={getScaleVars(products.length, 'F')}>
       {products.map((p, i) => (
@@ -282,7 +300,7 @@ function RenderTemplateF({ products, showPrice }: { products: Product[]; showPri
           <div className="f-body">
             <div className="f-name">{p.name}</div>
             {p.spec && <div className="f-spec">{p.spec}</div>}
-            {showPrice && <div className="f-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+            {showPrice && <div className="f-price" style={priceStyle(p, onPriceClick)} {...priceClick(p, onPriceClick)}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
           </div>
         </div>
       ))}
@@ -291,7 +309,7 @@ function RenderTemplateF({ products, showPrice }: { products: Product[]; showPri
 }
 
 // ═══ TEMPLATE L: 테이블형 (Clean Table) ═══
-function RenderTemplateL({ products, showPrice, groupBy = 'major' }: { products: Product[]; showPrice: boolean; groupBy?: GroupBy }) {
+function RenderTemplateL({ products, showPrice, groupBy = 'major', onPriceClick }: TemplateProps) {
   const groups = groupByCategory(products, groupBy);
   return (
     <div className="grid-l" style={getScaleVars(products.length, 'L')}>
@@ -314,7 +332,7 @@ function RenderTemplateL({ products, showPrice, groupBy = 'major' }: { products:
                   {p.name}
                 </div>
                 <div className="l-cell l-cell-spec">{p.spec || '-'}</div>
-                {showPrice && <div className="l-cell l-cell-price l-price-val" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell)}</div>}
+                {showPrice && <div className="l-cell l-cell-price l-price-val" style={priceStyle(p, onPriceClick)} {...priceClick(p, onPriceClick)}>{formatPrice(p.sell)}</div>}
               </div>
             ))}
           </div>
@@ -324,7 +342,7 @@ function RenderTemplateL({ products, showPrice, groupBy = 'major' }: { products:
   );
 }
 
-function RenderCover({ products, showPrice, settings }: { products: Product[]; showPrice: boolean; settings: CoverSettings }) {
+function RenderCover({ products, showPrice, settings, onPriceClick }: { products: Product[]; showPrice: boolean; settings: CoverSettings; onPriceClick?: PriceClick }) {
   const heroes = products.slice(0, 3);
   return (
     <div className="cover-body">
@@ -363,7 +381,7 @@ function RenderCover({ products, showPrice, settings }: { products: Product[]; s
             <div className="cc-body">
               <div className="cc-name">{p.name}</div>
               <div className="cc-spec">{p.spec}</div>
-              {showPrice && <div className="cc-price" style={p.sold_out ? { textDecoration: 'line-through', opacity: 0.5 } : {}}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
+              {showPrice && <div className="cc-price" style={priceStyle(p, onPriceClick)} {...priceClick(p, onPriceClick)}>{formatPrice(p.sell).replace('원', '')}<span>원</span></div>}
             </div>
           </div>
         ))}
@@ -398,7 +416,7 @@ const MAJOR_EMOJI: Record<string, string> = {
 
 function ProductPicker({
   products, majors, countByMajor, minorRank, selected, initialMajor, template, templateMax,
-  nameOf, priceOf, onToggle, onSetMany, onGenerate, onClose,
+  nameOf, priceOf, priceEdited, onPriceClick, onToggle, onSetMany, onGenerate, onClose, escLocked,
 }: {
   products: Product[];
   majors: string[];
@@ -410,22 +428,28 @@ function ProductPicker({
   templateMax: number;
   nameOf: (p: Product) => string;
   priceOf: (p: Product) => number;
+  /** 전단지용 가격을 수정한 품목인지 (빨간 글자로 표시) */
+  priceEdited: (p: Product) => boolean;
+  /** 카드의 가격을 누르면 전단지용 가격 수정 (2026-10-16) */
+  onPriceClick: (p: Product) => void;
   onToggle: (code: string) => void;
   onSetMany: (codes: string[], on: boolean) => void;
   onGenerate: () => void;
   onClose: () => void;
+  /** 가격 수정 모달이 위에 떠 있는 동안엔 Esc 로 품목 고르기까지 닫히지 않게 */
+  escLocked: boolean;
 }) {
   const [major, setMajor] = useState(initialMajor || majors[0] || '');
   const [minor, setMinor] = useState('전체');
   const [q, setQ] = useState('');
   const [onlySelected, setOnlySelected] = useState(false);
 
-  // Esc 로 닫기
+  // Esc 로 닫기 (모달이 열려 있으면 모달만 닫힌다)
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !escLocked) onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, escLocked]);
 
   const majorOf = (p: Product) => p.major_name || '기타';
   const minorOf = (p: Product) => p.minor_name || '기타';
@@ -557,7 +581,22 @@ function ProductPicker({
                     </div>
                     <div style={{ fontSize: '12px', fontWeight: 700, lineHeight: 1.3, height: '31px', overflow: 'hidden', wordBreak: 'break-all' }}>{nameOf(p)}</div>
                     <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minHeight: '13px' }}>{p.spec || ''}</div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--accent2)', marginTop: '3px' }}>{formatPrice(priceOf(p))}</div>
+                    {/* 가격 클릭 → 전단지용 가격 수정 (카드 선택/해제와 분리) */}
+                    <div
+                      onClick={e => { e.stopPropagation(); onPriceClick(p); }}
+                      title="클릭하여 전단지용 가격 수정"
+                      style={{
+                        display: 'inline-block', fontSize: '13px', fontWeight: 800, marginTop: '3px', padding: '1px 6px', marginLeft: '-6px',
+                        borderRadius: '4px', cursor: 'pointer',
+                        color: priceEdited(p) ? '#d32f2f' : 'var(--accent2)',
+                        textDecoration: priceEdited(p) ? 'underline' : 'none',
+                        border: '1px dashed transparent',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--accent2)'; (e.currentTarget as HTMLDivElement).style.background = '#fef3c7'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'transparent'; (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+                    >
+                      {formatPrice(priceOf(p))} <span style={{ fontSize: '9px', fontWeight: 600, opacity: 0.7 }}>✎</span>
+                    </div>
                   </div>
                 );
               })}
@@ -909,6 +948,11 @@ export default function FlyerPage() {
     setPriceEditModal({ code, name, original: currentSell });
     setPriceEditValue(String(priceOverrides[code] ?? currentSell));
   }
+  /** 미리보기·품목 고르기 카드에서 가격을 눌렀을 때 — 넘어온 p 는 수정가가 적용된 복사본일 수 있어 DB 원가는 products 에서 찾는다 */
+  function openPriceEditFor(p: Product) {
+    const original = products.find(op => op.code === p.code)?.sell ?? p.sell;
+    openPriceEdit(p.code, p.name, original);
+  }
   function confirmPriceEdit() {
     if (!priceEditModal) return;
     const val = parseInt(priceEditValue.replace(/[^0-9]/g, ''), 10);
@@ -1126,7 +1170,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.2</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.3</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
@@ -1140,7 +1184,8 @@ export default function FlyerPage() {
         {/* ═══ LEFT PANEL ═══ */}
         <div className="no-print" style={{
           width: '340px', flexShrink: 0, background: 'var(--panel)',
-          borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          // 필터(중분류 칩)가 길어지면 아래 품목 목록이 눌려 안 보이던 문제 — 패널 전체를 스크롤되게 (2026-10-16)
+          borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflowY: 'auto', overflowX: 'hidden',
         }}>
           {/* Stats */}
           <div style={{ borderBottom: '1px solid var(--border)', padding: '14px 16px' }}>
@@ -1310,8 +1355,8 @@ export default function FlyerPage() {
             <span style={{ fontSize: '10px', color: 'var(--muted)' }}>클릭시 품목명 수정</span>
           </div>
 
-          {/* Product List */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px' }}>
+          {/* Product List — 최소 높이를 보장해 위 필터가 길어도 패널을 내리면 목록이 보인다 */}
+          <div style={{ flex: 1, minHeight: '360px', overflowY: 'auto', padding: '8px 16px' }}>
             {loading ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px', color: 'var(--muted)' }}>
                 <div className="spinner" />
@@ -1712,7 +1757,7 @@ export default function FlyerPage() {
                           <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=2&data=https://product-catalog-4qg.pages.dev" alt="QR" crossOrigin="anonymous" style={{ width: '64px', height: '64px', imageRendering: 'pixelated' as const }} />
                         </div>
                       </div>
-                      <RenderCover products={selectedProducts} showPrice={showPrice} settings={coverSettings} />
+                      <RenderCover products={selectedProducts} showPrice={showPrice} settings={coverSettings} onPriceClick={openPriceEditFor} />
                       <div className="flyer-footer">
                         <div className="f-note">{footerNote}</div>
                         <div className="f-contact">{contact}</div>
@@ -1722,7 +1767,7 @@ export default function FlyerPage() {
                 }
 
                 // 일반 템플릿 (다중 페이지 자동 분할)
-                const RenderMap: Record<string, React.FC<{ products: Product[]; showPrice: boolean; groupBy?: GroupBy }>> = {
+                const RenderMap: Record<string, React.FC<TemplateProps>> = {
                   A: RenderTemplateA, B: RenderTemplateB, C: RenderTemplateC, D: RenderTemplateD,
                   E: RenderTemplateE, F: RenderTemplateF, L: RenderTemplateL,
                 };
@@ -1754,7 +1799,8 @@ export default function FlyerPage() {
 
                     {/* Body */}
                     <div className="flyer-body">
-                      {TemplateRenderer && <TemplateRenderer products={chunk} showPrice={showPrice} groupBy={groupBy} />}
+                      {/* 미리보기에서 가격을 누르면 전단지용 가격 수정 (2026-10-16) */}
+                      {TemplateRenderer && <TemplateRenderer products={chunk} showPrice={showPrice} groupBy={groupBy} onPriceClick={openPriceEditFor} />}
                     </div>
 
                     {/* Footer */}
@@ -1790,6 +1836,9 @@ export default function FlyerPage() {
           templateMax={TEMPLATE_MAX[template] || 20}
           nameOf={p => nameOverrides[p.code] || p.display_name || p.name}
           priceOf={p => priceOverrides[p.code] ?? p.sell}
+          priceEdited={p => priceOverrides[p.code] != null}
+          onPriceClick={openPriceEditFor}
+          escLocked={!!priceEditModal || !!editModal}
           onToggle={code => setManySelected([code], !selected.has(code))}
           onSetMany={setManySelected}
           onGenerate={generateFromPicker}

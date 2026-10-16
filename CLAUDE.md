@@ -49,6 +49,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
   `.print-ancestor`(100vh·overflow:hidden·flex 해제)를 달아 `#printArea` 가 일반 흐름에서 `.flyer-a4` 마다 page-break 로 이어진다.
   새 래퍼를 추가하면 클래스를 같이 달 것.
 
+- **PNG/PDF 캡처 글자 잘림 수정** (2026-10-16, v4.3): html2canvas 가 글자 기준선을 재는 숨은 `<img>` 가 Tailwind preflight
+  `img{display:block}` 에 밀려 기준선이 커지고, 캡처된 글자가 전부 아래로 밀려 D(39개) 카드 바닥의 가격이 반쯤 잘렸다.
+  globals.css 의 `body > div[style*="white-space: nowrap"] > img { display:inline }` 로 보정. 미리보기·window.print 는 원래 정상이었음.
+  재현·검증은 scratchpad 의 h2c-harness(빌드된 CSS + html2canvas.min.js + 가짜 카드 39개 → 헤드리스 Edge 스크린샷)로.
+  **반드시 빌드된 `out/_next/static/css/*.css` 를 링크해야 재현된다** (globals.css 원본은 `@tailwind base` 가 안 풀려 재현 안 됨).
+- **가격 클릭 수정** (2026-10-16): 미리보기 전단지(모든 템플릿·표지)와 품목 고르기 카드의 가격을 누르면 전단지용 가격 수정 모달.
+  가격 수정 모달이 떠 있는 동안 Esc 는 모달만 닫는다(`escLocked`). 미리보기 가격엔 `cursor:pointer`·title 만 붙어 캡처엔 영향 없음.
+- **좌측 패널 스크롤** (2026-10-16): "전체" 대분류에서 중분류 칩이 길어지면 아래 품목 목록이 0px 로 눌려 안 보였다 →
+  패널 자체를 `overflow-y:auto` 로 두고 품목 목록 `min-height:360px` 보장(패널을 내리면 목록이 보이고 목록 안에서 또 스크롤).
+
 ## 규칙
 1. QR코드 스캔 가능 여부 테스트 (PNG 다운로드 후 확인)
 2. 인쇄 해상도 유지 (html2canvas scale 설정 주의)

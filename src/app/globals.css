@@ -36,6 +36,14 @@ body {
   padding: 0;
 }
 
+/* ── html2canvas(PNG/PDF 저장) 글자 기준선 보정 (2026-10-16) ──
+   html2canvas 는 캡처 전에 body 에 숨긴 <div style="visibility:hidden; white-space:nowrap"><span>글자</span><img></div> 를
+   붙이고 img 의 위치로 글자 기준선(baseline)을 잰다. Tailwind preflight 의 img{display:block} 때문에 그 img 가
+   줄 아래로 떨어져 기준선이 글자 크기의 절반쯤 커지고, 캡처된 글자가 전부 아래로 밀린다 → 가로배치형(D) 39개처럼
+   빽빽한 카드에서 바닥의 가격이 반쯤 잘려 나왔다(미리보기·인쇄는 정상). 측정용 img 만 inline 으로 되돌린다.
+   (scratchpad h2c-harness 로 재현·검증) */
+body > div[style*="white-space: nowrap"] > img { display: inline !important; }
+
 /* ── Color Themes ── */
 .theme-green  { --accent: #2c5f2e; --accent2: #b45309; }
 .theme-navy   { --accent: #1a3a5c; --accent2: #b45309; }
