@@ -109,6 +109,49 @@ const ALL_MAJORS = '__ALL__';
 /** 작업 내용 자동 저장 키 (localStorage) — 선택 품목·순서·이름/가격 수정·레이아웃·설정. 새로고침·배포 후에도 유지. */
 const SAVE_KEY = 'flyer-work-v1';
 
+// ══════════════════════════════════════
+// PNG/PDF 내보내기 속도 (2026-10-17)
+// 예전엔 페이지마다 모든 이미지를 wsrv.nl 프록시에서 "원본 크기 PNG"(품목당 ~450KB)로 다시 받고(39개×7장 ≈ 120MB),
+// 3배 캡처(2382×3369)를 PNG 문자열로 인코딩했다. 지금은 ① 표시 크기에 맞춘 webp(품목당 ~9KB)로 ② 세션 캐시에 한 번만 받고
+// ③ 동시 8개 병렬 선로딩 ④ PDF 2.5배/PNG 2배 캡처 ⑤ PDF 압축·FAST 삽입 ⑥ PNG 는 toBlob + object URL.
+// ══════════════════════════════════════
+/** 캡처 배율 — PDF 는 인쇄용(약 240dpi), PNG 는 카톡·화면 공유용(약 190dpi) */
+const PDF_SCALE = 2.5;
+const PNG_SCALE = 2;
+/** 내보내기 이미지 캐시 (키: 원본 src|너비 버킷 → data URL). 같은 세션에서 다시 뽑거나 페이지가 많아도 이미지는 한 번만 받는다 */
+const exportImageCache = new Map<string, string>();
+/** 썸네일 요청 너비 버킷(px) — 화면 배치 너비 × 2.5 를 300 단위로 올림해 캐시 적중률을 높인다 (300~1500) */
+function exportWidthBucket(cssWidth: number): number {
+  const w = Math.ceil(((cssWidth || 100) * 2.5) / 300) * 300;
+  return Math.min(1500, Math.max(300, w));
+}
+/** 캡처용 이미지 URL — R2 공개 버킷은 CORS 헤더가 없어 wsrv.nl 프록시가 필수. 같은 출처(/logo.png)는 프록시 없이 바로. */
+function exportImageSrc(src: string, width: number): string {
+  if (typeof window !== 'undefined' && src.startsWith(window.location.origin + '/')) return src;
+  if (src.includes('wsrv.nl')) return `${src}&w=${width}`;
+  return `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=webp&q=90&w=${width}`;
+}
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+/** 동시 실행 수를 제한한 병렬 처리 */
+async function runPool<T>(items: T[], limit: number, fn: (item: T) => Promise<void>): Promise<void> {
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) await fn(items[next++]);
+  });
+  await Promise.all(workers);
+}
+/** 상태 표시가 화면에 그려질 틈을 준다 (캡처는 메인 스레드를 길게 점유함) */
+function nextPaint(): Promise<void> {
+  return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+}
+
 // ── Product Image Component ──
 function ProductImg({ product, className, style }: { product: Product; className?: string; style?: React.CSSProperties }) {
   const [err, setErr] = useState(false);
@@ -660,6 +703,15 @@ export default function FlyerPage() {
   const [showPrice, setShowPrice] = useState(true);
   const [zoom, setZoom] = useState(0.7);
   const [generated, setGenerated] = useState(false);
+  /** PNG/PDF 내보내기 진행 상태 ('' = 대기). 진행 중엔 내보내기 버튼을 잠근다 */
+  const [exportStatus, setExportStatus] = useState('');
+
+  // 전단지를 만들면 내보내기 라이브러리를 미리 받아 둔다 — 첫 PDF/PNG 클릭 때 청크 로딩 대기 제거
+  useEffect(() => {
+    if (!generated) return;
+    void import('html2canvas');
+    void import('jspdf');
+  }, [generated]);
 
   // ── Cover Settings ──
   const [coverSettings, setCoverSettings] = useState<CoverSettings>({
@@ -1025,34 +1077,31 @@ export default function FlyerPage() {
   }
 
   // ── Export (다중 페이지 지원) ──
-  async function preloadImages(container: HTMLElement): Promise<Map<string, string>> {
-    const imgs = container.querySelectorAll('img');
-    const map = new Map<string, string>();
-    const unique = new Set<string>();
-    imgs.forEach(img => { if (img.src && !img.src.startsWith('data:')) unique.add(img.src); });
-    await Promise.all(Array.from(unique).map(async (src) => {
-      try {
-        // CORS 프록시를 통해 이미지 로드 후 base64 변환
-        const proxySrc = src.includes('wsrv.nl') || src.startsWith('data:')
-          ? src
-          : `https://wsrv.nl/?url=${encodeURIComponent(src)}&output=png`;
-        const resp = await fetch(proxySrc);
-        const blob = await resp.blob();
-        const b64: string = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        });
-        map.set(src, b64);
-      } catch { /* skip */ }
+  /** 모든 페이지의 이미지를 한 번에(동시 8개) 표시 크기에 맞춰 받아 캐시에 넣는다.
+   *  img 마다 data-export-key 를 달아 두면 html2canvas 클론(속성 복사)에서 캐시를 바로 찾을 수 있다. */
+  async function preloadImages(pages: HTMLElement[]): Promise<void> {
+    const jobs = new Map<string, string>(); // 캐시 키 → 요청 URL
+    pages.forEach(page => page.querySelectorAll('img').forEach(img => {
+      if (!img.src || img.src.startsWith('data:')) return;
+      const bucket = exportWidthBucket(img.offsetWidth);
+      const key = `${img.src}|${bucket}`;
+      img.dataset.exportKey = key;
+      if (!exportImageCache.has(key) && !jobs.has(key)) jobs.set(key, exportImageSrc(img.src, bucket));
     }));
-    return map;
+    await runPool(Array.from(jobs.entries()), 8, async ([key, url]) => {
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) return;
+        const blob = await resp.blob();
+        if (!blob.type.startsWith('image/')) return;
+        exportImageCache.set(key, await blobToDataUrl(blob));
+      } catch { /* 못 받은 이미지는 원본 src 로 캡처를 시도한다 */ }
+    });
   }
 
   async function captureFlyer(pageEl: HTMLElement, scale: number) {
     const html2canvas = (await import('html2canvas')).default;
-    // 이미지를 base64로 미리 변환 (CORS 프록시 경유)
-    const imageMap = await preloadImages(pageEl);
+    const imageFor = (img: HTMLImageElement) => (img.dataset.exportKey ? exportImageCache.get(img.dataset.exportKey) : undefined);
 
     const canvas = await html2canvas(pageEl, {
       scale: scale,
@@ -1068,7 +1117,7 @@ export default function FlyerPage() {
       onclone: function(clonedDoc: Document, clonedEl: HTMLElement) {
         // 이미지 처리: base64 교체 + object-fit → background-image 변환
         clonedEl.querySelectorAll('img').forEach(img => {
-          const b64 = imageMap.get(img.src);
+          const b64 = imageFor(img);
           // 로고, QR 등 작은 이미지는 src만 교체
           if (img.style.objectFit !== 'contain') {
             if (b64) img.src = b64;
@@ -1107,42 +1156,57 @@ export default function FlyerPage() {
     return canvas;
   }
 
-  async function exportPDF() {
+  /** 내보내기 공통 틀 — 페이지 수집 → 이미지 선로딩 → 페이지마다 캡처(진행 표시) → 완료/실패 토스트. 진행 중엔 버튼 잠금. */
+  async function runExport(kind: 'PDF' | 'PNG', perPage: (canvas: HTMLCanvasElement, index: number, total: number) => Promise<void>, finish: (total: number) => void) {
     const container = flyerRef.current;
-    if (!container) return;
-    showToast('PDF 생성 중...');
-    const { jsPDF } = await import('jspdf');
-    const pages = container.querySelectorAll('.flyer-a4');
+    if (!container || exportStatus) return;
+    const pages = Array.from(container.querySelectorAll<HTMLElement>('.flyer-a4'));
     if (pages.length === 0) return;
+    setExportStatus(`${kind} 이미지 준비 중…`);
+    try {
+      await preloadImages(pages);
+      for (let i = 0; i < pages.length; i++) {
+        setExportStatus(`${kind} 생성 중… ${i + 1}/${pages.length}`);
+        await nextPaint();
+        const canvas = await captureFlyer(pages[i], kind === 'PDF' ? PDF_SCALE : PNG_SCALE);
+        await perPage(canvas, i, pages.length);
+      }
+      finish(pages.length);
+    } catch (err) {
+      console.error(`${kind} export failed:`, err);
+      showToast(`${kind} 생성에 실패했습니다. 다시 시도해 주세요`);
+    } finally {
+      setExportStatus('');
+    }
+  }
 
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  async function exportPDF() {
+    const { jsPDF } = await import('jspdf');
+    // compress: 이미지 스트림 압축, 'FAST': JPEG 를 다시 인코딩하지 않고 그대로 삽입
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
     const pdfW = pdf.internal.pageSize.getWidth();
     const pdfH = pdf.internal.pageSize.getHeight();
-
-    for (let i = 0; i < pages.length; i++) {
+    await runExport('PDF', async (canvas, i) => {
       if (i > 0) pdf.addPage();
-      const canvas = await captureFlyer(pages[i] as HTMLElement, 3);
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, pdfW, pdfH);
-    }
-    pdf.save(`전단지_${flyerDate}.pdf`);
-    showToast(`PDF 다운로드 완료! (${pages.length}페이지)`);
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', 0, 0, pdfW, pdfH, undefined, 'FAST');
+    }, (total) => {
+      pdf.save(`전단지_${flyerDate}.pdf`);
+      showToast(`PDF 다운로드 완료! (${total}페이지)`);
+    });
   }
 
   async function exportPNG() {
-    const container = flyerRef.current;
-    if (!container) return;
-    showToast('PNG 생성 중...');
-    const pages = container.querySelectorAll('.flyer-a4');
-    if (pages.length === 0) return;
-
-    for (let i = 0; i < pages.length; i++) {
-      const canvas = await captureFlyer(pages[i] as HTMLElement, 3);
+    await runExport('PNG', async (canvas, i, total) => {
+      // toBlob 은 비동기 인코딩이라 거대한 data URL 문자열을 만들지 않는다
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('canvas.toBlob returned null');
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.download = pages.length > 1 ? `전단지_${flyerDate}_${i + 1}.png` : `전단지_${flyerDate}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.download = total > 1 ? `전단지_${flyerDate}_${i + 1}.png` : `전단지_${flyerDate}.png`;
+      link.href = url;
       link.click();
-    }
-    showToast(`PNG 다운로드 완료! (${pages.length}장)`);
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    }, (total) => showToast(`PNG 다운로드 완료! (${total}장)`));
   }
 
   function doPrint() { window.print(); }
@@ -1170,12 +1234,18 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.3</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.4</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
+          {exportStatus && (
+            <span style={{ color: '#fde68a', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px', borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fde68a' }} />
+              {exportStatus}
+            </span>
+          )}
           <button className="btn btn-print" onClick={doPrint}>인쇄</button>
-          <button className="btn btn-white" onClick={exportPNG}>PNG</button>
-          <button className="btn-orange btn" onClick={exportPDF}>PDF 저장</button>
+          <button className="btn btn-white" onClick={exportPNG} disabled={!!exportStatus} style={exportStatus ? { opacity: 0.5, cursor: 'wait' } : undefined}>PNG</button>
+          <button className="btn-orange btn" onClick={exportPDF} disabled={!!exportStatus} style={exportStatus ? { opacity: 0.5, cursor: 'wait' } : undefined}>PDF 저장</button>
         </div>
       </header>
 
@@ -1379,7 +1449,8 @@ export default function FlyerPage() {
                     <input type="checkbox" checked={isSelected} readOnly
                       style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--accent)', flexShrink: 0 }} />
                     {imgUrl ? (
-                      <img src={imgUrl} alt="" style={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover', background: '#eee', flexShrink: 0, border: '1px solid var(--border)' }}
+                      // lazy: 1,000개 넘는 목록 썸네일이 첫 화면·내보내기 클론(html2canvas 가 문서 전체를 복제해 로드 완료를 기다림)을 느리게 하지 않도록
+                      <img src={imgUrl} alt="" loading="lazy" decoding="async" style={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover', background: '#eee', flexShrink: 0, border: '1px solid var(--border)' }}
                         onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     ) : (
                       <div style={{ width: '36px', height: '36px', borderRadius: '4px', background: '#e8e4de', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: '#aaa', fontWeight: 600, flexShrink: 0, border: '1px solid var(--border)' }}>IMG</div>

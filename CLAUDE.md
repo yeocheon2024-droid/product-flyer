@@ -59,6 +59,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 - **좌측 패널 스크롤** (2026-10-16): "전체" 대분류에서 중분류 칩이 길어지면 아래 품목 목록이 0px 로 눌려 안 보였다 →
   패널 자체를 `overflow-y:auto` 로 두고 품목 목록 `min-height:360px` 보장(패널을 내리면 목록이 보이고 목록 안에서 또 스크롤).
 
+- **PNG/PDF 내보내기 속도 개선** (2026-10-17, v4.4): 병목은 이미지였다 — 페이지마다 모든 이미지를 wsrv.nl 에서 **원본 크기 PNG(품목당 ~450KB)** 로
+  다시 받았다(39개×7장 ≈ 120MB). 지금은 표시 너비(`img.offsetWidth`×2.5, 300px 버킷)에 맞춘 **webp(~9KB)** 를 세션 캐시(`exportImageCache`)에
+  한 번만 받고(동시 8개, 모든 페이지 선로딩), 캡처 배율 PDF 2.5 / PNG 2, jsPDF `compress`+`'FAST'`, PNG 는 `toBlob`+object URL.
+  R2 공개 버킷은 CORS 헤더가 없어 프록시는 그대로 필요. 같은 출처(/logo.png)는 프록시 없이. 진행 상태는 헤더에 "PDF 생성 중… 2/7" 로 표시되고
+  그동안 PNG/PDF 버튼이 잠긴다. 좌측 품목 목록 썸네일은 `loading="lazy"` (html2canvas 가 문서 전체를 복제해 로드 완료를 기다리므로).
+  품질을 더 올리려면 `PDF_SCALE`/`PNG_SCALE` 만 바꾸면 된다.
+
 ## 규칙
 1. QR코드 스캔 가능 여부 테스트 (PNG 다운로드 후 확인)
 2. 인쇄 해상도 유지 (html2canvas scale 설정 주의)
