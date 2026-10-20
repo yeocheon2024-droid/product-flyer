@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { fetchProducts, fetchCategoryOrder, getImageUrl, formatPrice, getMajorCategories, getMinorCategories, Product } from '@/lib/supabase';
+import {
+  fetchProducts, fetchCategoryOrder, getImageUrl, formatPrice, getMajorCategories, getMinorCategories, Product,
+  Customer, StaffUser, getStaff, loginStaff, logoutStaff, fetchCustomers, fetchCustomerPriceMap,
+} from '@/lib/supabase';
 
 // 중분류 배열을 ERP category_order 기준으로 정렬 (없으면 가나다)
 function sortMinorsByOrder(minors: string[], orderMap: Record<string, number>): string[] {
@@ -457,9 +460,16 @@ const MAJOR_EMOJI: Record<string, string> = {
   농산품: '🌾', '우유/계란': '🥚', 공산품: '🏭', 야채: '🥬', 수산품: '🦐', 축산품: '🥩', 기타: '🗂️',
 };
 
+/** 가격 출처 (2026-10-20) — 손으로 고친 값 / 거래처 단가 / 기본 현금할인가 */
+type PriceKind = 'edited' | 'customer' | 'default';
+const PRICE_KIND_COLOR: Record<PriceKind, string> = { edited: '#d32f2f', customer: '#1d4ed8', default: 'var(--accent2)' };
+/** 거래처 선택 모달에서 마지막 로그인 ID 기억 */
+const STAFF_LAST_ID_KEY = 'flyer-staff-last-id';
+
 function ProductPicker({
   products, majors, countByMajor, minorRank, selected, initialMajor, template, templateMax,
-  nameOf, priceOf, priceEdited, onPriceClick, onToggle, onSetMany, onGenerate, onClose, escLocked,
+  nameOf, priceOf, priceKind, onPriceClick, onToggle, onSetMany, onGenerate, onClose, escLocked,
+  customerLabel, onCustomerClick,
 }: {
   products: Product[];
   majors: string[];
@@ -471,10 +481,13 @@ function ProductPicker({
   templateMax: number;
   nameOf: (p: Product) => string;
   priceOf: (p: Product) => number;
-  /** 전단지용 가격을 수정한 품목인지 (빨간 글자로 표시) */
-  priceEdited: (p: Product) => boolean;
+  /** 가격 출처 — edited: 손으로 고친 값(빨강) / customer: 거래처 단가(파랑) / default: 기본 현금할인가 */
+  priceKind: (p: Product) => PriceKind;
   /** 카드의 가격을 누르면 전단지용 가격 수정 (2026-10-16) */
   onPriceClick: (p: Product) => void;
+  /** 상단 바 거래처 버튼 문구 (2026-10-20) — 누르면 거래처 선택 모달 */
+  customerLabel: string;
+  onCustomerClick: () => void;
   onToggle: (code: string) => void;
   onSetMany: (codes: string[], on: boolean) => void;
   onGenerate: () => void;
@@ -528,6 +541,18 @@ function ProductPicker({
         <span style={{ fontSize: '15px', fontWeight: 800 }}>🔍 품목 고르기</span>
         <span style={{ fontSize: '11px', opacity: 0.75 }}>카드를 누르면 선택/해제 · 필요 없는 품목은 체크를 풀어 빼세요</span>
         <div style={{ flex: 1 }} />
+        {/* 거래처 단가 — 수발주 관리자에 설정된 거래처별 단가를 불러와 쓴다 (2026-10-20) */}
+        <button
+          onClick={onCustomerClick}
+          title="거래처를 고르면 그 거래처에 설정된 단가로 전단지를 만듭니다 (미설정 = 기본 현금할인가)"
+          style={{
+            background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.35)', borderRadius: '6px',
+            padding: '5px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', maxWidth: '260px',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}
+        >
+          🏪 {customerLabel}
+        </button>
         <span style={{ fontSize: '12px', fontWeight: 700 }}>
           선택 {selected.size}개 · 레이아웃 {template} ({templateMax}개/장) → {pages}페이지
         </span>
@@ -631,8 +656,8 @@ function ProductPicker({
                       style={{
                         display: 'inline-block', fontSize: '13px', fontWeight: 800, marginTop: '3px', padding: '1px 6px', marginLeft: '-6px',
                         borderRadius: '4px', cursor: 'pointer',
-                        color: priceEdited(p) ? '#d32f2f' : 'var(--accent2)',
-                        textDecoration: priceEdited(p) ? 'underline' : 'none',
+                        color: PRICE_KIND_COLOR[priceKind(p)],
+                        textDecoration: priceKind(p) === 'edited' ? 'underline' : 'none',
                         border: '1px dashed transparent',
                       }}
                       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--accent2)'; (e.currentTarget as HTMLDivElement).style.background = '#fef3c7'; }}
@@ -669,6 +694,18 @@ export default function FlyerPage() {
   const [selectedOrder, setSelectedOrder] = useState<string[]>([]);
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({});
+  // ── 거래처 단가 (2026-10-20, v4.5) — 수발주 관리자의 customer_pricing 을 불러와 기본 현금할인가 대신 쓴다 ──
+  const [staff, setStaff] = useState<StaffUser | null>(null);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customer, setCustomer] = useState<{ id: string; name: string } | null>(null);
+  const [customerPrices, setCustomerPrices] = useState<Record<string, number>>({});
+  const [customerModal, setCustomerModal] = useState(false);
+  const [customerBusy, setCustomerBusy] = useState(false);
+  const [customerQuery, setCustomerQuery] = useState('');
+  const [loginId, setLoginId] = useState('');
+  const [loginPw, setLoginPw] = useState('');
+  const [loginErr, setLoginErr] = useState('');
+  const [loginBusy, setLoginBusy] = useState(false);
   const [showNoSell, setShowNoSell] = useState(false);
   // 대분류 일괄 생성 — 드롭다운 선택값(대분류명 또는 ALL_MAJORS) / 생성된 전단지 제목에 붙일 대분류명
   const [bulkMajor, setBulkMajor] = useState('');
@@ -773,6 +810,7 @@ export default function FlyerPage() {
           if (typeof s.showPrice === 'boolean') setShowPrice(s.showPrice);
           if (s.coverSettings && typeof s.coverSettings === 'object') setCoverSettings(prev => ({ ...prev, ...s.coverSettings }));
           if (typeof s.flyerCategoryLabel === 'string') setFlyerCategoryLabel(s.flyerCategoryLabel);
+          if (s.customer && typeof s.customer.id === 'string' && typeof s.customer.name === 'string') setCustomer({ id: s.customer.id, name: s.customer.name });
           if (s.generated && order2.length > 0) setGenerated(true);
         }
       } catch (err) {
@@ -783,6 +821,77 @@ export default function FlyerPage() {
     })();
   }, []);
 
+  // ── 직원 세션 확인 (2026-10-20) — 관리자 앱 계정으로 로그인돼 있으면 거래처 목록을 미리 받아 둔다 ──
+  useEffect(() => {
+    (async () => {
+      const me = await getStaff();
+      setStaff(me);
+      if (me) setCustomers(await fetchCustomers());
+      try { setLoginId(window.localStorage.getItem(STAFF_LAST_ID_KEY) || ''); } catch { /* ignore */ }
+    })();
+  }, []);
+
+  // ── 거래처가 정해지면(복원 포함) 그 거래처 단가를 불러온다. 로그인이 없으면 기본 단가 그대로 ──
+  useEffect(() => {
+    if (!customer) { setCustomerPrices({}); return; }
+    if (!staff) return;
+    let cancelled = false;
+    setCustomerBusy(true);
+    (async () => {
+      const map = await fetchCustomerPriceMap(customer.id);
+      if (cancelled) return;
+      setCustomerPrices(map);
+      setCustomerBusy(false);
+      showToast(`${customer.name} 거래처 단가 ${Object.keys(map).length}건 적용`);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customer?.id, staff?.userId]);
+
+  // 거래처 모달 Esc 닫기 (품목 고르기의 Esc 는 escLocked 로 막혀 있다)
+  useEffect(() => {
+    if (!customerModal) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setCustomerModal(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [customerModal]);
+
+  async function handleStaffLogin() {
+    if (loginBusy) return;
+    setLoginBusy(true);
+    setLoginErr('');
+    const res = await loginStaff(loginId, loginPw);
+    if (!res.ok) { setLoginErr(res.error); setLoginBusy(false); return; }
+    try { window.localStorage.setItem(STAFF_LAST_ID_KEY, loginId.trim()); } catch { /* ignore */ }
+    const me = await getStaff();
+    setStaff(me);
+    setCustomers(await fetchCustomers());
+    setLoginPw('');
+    setLoginBusy(false);
+  }
+  async function handleStaffLogout() {
+    await logoutStaff();
+    setStaff(null);
+    setCustomers([]);
+    setCustomer(null);
+    showToast('로그아웃 — 기본 단가로 돌아갑니다');
+  }
+  function pickCustomer(c: Customer | null) {
+    setCustomer(c ? { id: c.id, name: c.name } : null);
+    setCustomerModal(false);
+    setCustomerQuery('');
+    if (!c) showToast('거래처 해제 — 기본 현금할인가로 만듭니다');
+  }
+
+  /** 전단지 기본가 — 거래처가 설정돼 있으면 그 거래처 단가, 없으면 DB 현금할인가 */
+  const basePriceOf = (p: Product) => customerPrices[p.code] ?? p.sell;
+  const priceKindOf = (p: Product): PriceKind =>
+    priceOverrides[p.code] != null ? 'edited' : customerPrices[p.code] != null ? 'customer' : 'default';
+  const customerLabel = customer
+    ? (staff ? customer.name : `${customer.name} (로그인 필요)`)
+    : '거래처 미설정 (기본 단가)';
+  const customerPriceCount = Object.keys(customerPrices).length;
+
   // ── 작업 자동 저장 (2026-10-02) — 바뀔 때마다 localStorage 에 기록. 배포·새로고침 후에도 그대로 이어서 작업 ──
   useEffect(() => {
     if (!restoredRef.current) return;
@@ -790,12 +899,12 @@ export default function FlyerPage() {
       window.localStorage.setItem(SAVE_KEY, JSON.stringify({
         savedAt: new Date().toISOString(),
         selectedOrder, nameOverrides, priceOverrides, template, theme, companyName, subtitle, footerNote,
-        selectedContacts: Array.from(selectedContacts), flyerDate, showPrice, coverSettings, flyerCategoryLabel, generated,
+        selectedContacts: Array.from(selectedContacts), flyerDate, showPrice, coverSettings, flyerCategoryLabel, generated, customer,
       }));
     } catch (err) {
       console.warn('작업 자동 저장 실패:', err);
     }
-  }, [selectedOrder, nameOverrides, priceOverrides, template, theme, companyName, subtitle, footerNote, selectedContacts, flyerDate, showPrice, coverSettings, flyerCategoryLabel, generated]);
+  }, [selectedOrder, nameOverrides, priceOverrides, template, theme, companyName, subtitle, footerNote, selectedContacts, flyerDate, showPrice, coverSettings, flyerCategoryLabel, generated, customer]);
 
   /** 저장된 작업까지 지우고 처음부터 */
   function clearSavedWork() {
@@ -805,6 +914,7 @@ export default function FlyerPage() {
     setSelectedOrder([]);
     setNameOverrides({});
     setPriceOverrides({});
+    setCustomer(null);
     setFlyerCategoryLabel('');
     setGenerated(false);
     showToast('작업을 초기화했습니다');
@@ -865,7 +975,7 @@ export default function FlyerPage() {
     .map(p => ({
       ...p,
       name: nameOverrides[p.code] || p.display_name || p.name,
-      sell: priceOverrides[p.code] ?? p.sell,
+      sell: priceOverrides[p.code] ?? basePriceOf(p),
     }));
 
   // ── Actions ──
@@ -1000,10 +1110,10 @@ export default function FlyerPage() {
     setPriceEditModal({ code, name, original: currentSell });
     setPriceEditValue(String(priceOverrides[code] ?? currentSell));
   }
-  /** 미리보기·품목 고르기 카드에서 가격을 눌렀을 때 — 넘어온 p 는 수정가가 적용된 복사본일 수 있어 DB 원가는 products 에서 찾는다 */
+  /** 미리보기·품목 고르기 카드에서 가격을 눌렀을 때 — 넘어온 p 는 수정가가 적용된 복사본일 수 있어 기본가는 products 에서 찾는다 */
   function openPriceEditFor(p: Product) {
-    const original = products.find(op => op.code === p.code)?.sell ?? p.sell;
-    openPriceEdit(p.code, p.name, original);
+    const original = products.find(op => op.code === p.code);
+    openPriceEdit(p.code, p.name, original ? basePriceOf(original) : p.sell);
   }
   function confirmPriceEdit() {
     if (!priceEditModal) return;
@@ -1234,7 +1344,7 @@ export default function FlyerPage() {
         <img src="/logo.png" alt="지구농산" style={{ height: '28px', width: '28px' }} />
         <h1 style={{ color: '#fff', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.3px', fontFamily: "'EBSHunminjeongeum', 'Jua', sans-serif" }}>전단지 생성기</h1>
         <span style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.2)' }}>DB 연동</span>
-        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.4</span>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '9px', fontWeight: 400 }}>v4.5</span>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', gap: '6px' }}>
           {exportStatus && (
@@ -1310,6 +1420,28 @@ export default function FlyerPage() {
                 )}
               </div>
             )}
+          </div>
+
+          {/* 거래처 단가 (2026-10-20) — 수발주 관리자에 설정된 거래처별 단가를 불러와 전단지 가격으로 쓴다 */}
+          <div style={{ borderBottom: '1px solid var(--border)', padding: '12px 16px', background: '#eef4ff' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, marginBottom: '8px' }}>
+              거래처 단가
+            </h3>
+            <button
+              className="btn btn-white"
+              onClick={() => setCustomerModal(true)}
+              style={{ width: '100%', padding: '7px 10px', fontSize: '12px', border: `1px solid ${customer ? '#1d4ed8' : 'var(--border)'}`, color: customer ? '#1d4ed8' : 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+              title="거래처를 고르면 그 거래처에 설정된 단가로 전단지를 만듭니다"
+            >
+              🏪 {customerLabel}
+            </button>
+            <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '6px', lineHeight: 1.45 }}>
+              {customer
+                ? (staff
+                  ? (customerBusy ? '거래처 단가 불러오는 중…' : `거래처 단가 ${customerPriceCount}건 적용 · 나머지 품목은 기본 현금할인가`)
+                  : '로그인이 풀렸어요. 눌러서 관리자 계정으로 다시 로그인하면 거래처 단가가 적용됩니다.')
+                : '수발주 관리자(admin.jiguorder.com)에 설정된 거래처별 단가로 전단지를 만듭니다. 미설정이면 기본 현금할인가.'}
+            </div>
           </div>
 
           {/* Search & Filter */}
@@ -1467,11 +1599,11 @@ export default function FlyerPage() {
                       <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{p.spec}</div>
                     </div>
                     <div
-                      style={{ fontSize: '13px', fontWeight: 700, color: priceOverrides[p.code] != null ? '#d32f2f' : 'var(--accent2)', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: priceOverrides[p.code] != null ? 'underline' : 'none' }}
-                      onClick={e => { e.stopPropagation(); openPriceEdit(p.code, p.name, p.sell); }}
-                      title="클릭하여 전단지용 가격 수정"
+                      style={{ fontSize: '13px', fontWeight: 700, color: PRICE_KIND_COLOR[priceKindOf(p)], whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: priceOverrides[p.code] != null ? 'underline' : 'none' }}
+                      onClick={e => { e.stopPropagation(); openPriceEdit(p.code, p.name, basePriceOf(p)); }}
+                      title={priceKindOf(p) === 'customer' ? '거래처 단가 · 클릭하여 전단지용 가격 수정' : '클릭하여 전단지용 가격 수정'}
                     >
-                      {formatPrice(priceOverrides[p.code] ?? p.sell)}
+                      {formatPrice(priceOverrides[p.code] ?? basePriceOf(p))}
                     </div>
                   </div>
                 );
@@ -1516,8 +1648,8 @@ export default function FlyerPage() {
                     <span style={{ color: 'var(--muted)', fontWeight: 700, width: '16px', textAlign: 'center', flexShrink: 0 }}>{idx + 1}</span>
                     <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                     <span
-                      style={{ fontSize: '10px', fontWeight: 700, color: priceOverrides[p.code] != null ? '#d32f2f' : 'var(--muted)', cursor: 'pointer', flexShrink: 0 }}
-                      onClick={() => openPriceEdit(p.code, p.name, products.find(op => op.code === p.code)?.sell || p.sell)}
+                      style={{ fontSize: '10px', fontWeight: 700, color: priceKindOf(p) === 'default' ? 'var(--muted)' : PRICE_KIND_COLOR[priceKindOf(p)], cursor: 'pointer', flexShrink: 0 }}
+                      onClick={() => openPriceEditFor(p)}
                       title="가격 수정"
                     >
                       {formatPrice(p.sell).replace('원', '')}
@@ -1906,10 +2038,12 @@ export default function FlyerPage() {
           template={template}
           templateMax={TEMPLATE_MAX[template] || 20}
           nameOf={p => nameOverrides[p.code] || p.display_name || p.name}
-          priceOf={p => priceOverrides[p.code] ?? p.sell}
-          priceEdited={p => priceOverrides[p.code] != null}
+          priceOf={p => priceOverrides[p.code] ?? basePriceOf(p)}
+          priceKind={priceKindOf}
           onPriceClick={openPriceEditFor}
-          escLocked={!!priceEditModal || !!editModal}
+          customerLabel={customerLabel}
+          onCustomerClick={() => setCustomerModal(true)}
+          escLocked={!!priceEditModal || !!editModal || customerModal}
           onToggle={code => setManySelected([code], !selected.has(code))}
           onSetMany={setManySelected}
           onGenerate={generateFromPicker}
@@ -1958,7 +2092,9 @@ export default function FlyerPage() {
             onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: '14px', fontWeight: 800, marginBottom: '4px' }}>전단지용 가격 수정</div>
             <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px' }}>{priceEditModal.name}</div>
-            <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '14px' }}>DB 원가: {formatPrice(priceEditModal.original)} (변경되지 않음)</div>
+            <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '14px' }}>
+              {customer && customerPrices[priceEditModal.code] != null ? `${customer.name} 거래처 단가` : '기본 현금할인가'}: {formatPrice(priceEditModal.original)} (DB 는 변경되지 않음)
+            </div>
             <input
               value={priceEditValue}
               onChange={e => setPriceEditValue(e.target.value.replace(/[^0-9]/g, ''))}
@@ -1991,6 +2127,83 @@ export default function FlyerPage() {
           </div>
         </div>
       )}
+
+      {/* ── 거래처 선택 모달 (2026-10-20) — 관리자 계정 로그인 → 거래처 고르기 → 그 거래처 단가로 전단지 ── */}
+      {customerModal && (() => {
+        const ql = customerQuery.trim().toLowerCase();
+        const list = customers.filter(c => !ql || c.name.toLowerCase().includes(ql) || c.id.toLowerCase().includes(ql) || (c.assigned_sales_rep_code || '').toLowerCase().includes(ql));
+        const inputStyle: React.CSSProperties = { width: '100%', border: '1px solid var(--border)', borderRadius: '6px', padding: '8px 12px', fontSize: '13px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: '#fff' };
+        return (
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => setCustomerModal(false)}
+          >
+            <div style={{ background: '#fff', borderRadius: '12px', padding: '22px 26px', width: '440px', maxHeight: '86vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,0.2)' }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: '14px', fontWeight: 800, marginBottom: '2px' }}>🏪 거래처 단가로 전단지 만들기</div>
+              <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '12px', lineHeight: 1.45 }}>
+                수발주 관리자(admin.jiguorder.com) 단가 관리에 설정된 거래처별 단가를 그대로 씁니다. 거래처 단가가 없는 품목은 기본 현금할인가.
+              </div>
+
+              {!staff ? (
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>관리자 앱과 같은 계정으로 로그인</div>
+                  <input value={loginId} onChange={e => setLoginId(e.target.value)} placeholder="로그인 ID (예: jn3333_1) 또는 이메일" autoFocus autoComplete="username"
+                    onKeyDown={e => { if (e.key === 'Enter') handleStaffLogin(); }} style={{ ...inputStyle, marginBottom: '6px' }} />
+                  <input type="password" value={loginPw} onChange={e => setLoginPw(e.target.value)} placeholder="비밀번호" autoComplete="current-password"
+                    onKeyDown={e => { if (e.key === 'Enter') handleStaffLogin(); }} style={inputStyle} />
+                  {loginErr && <div style={{ fontSize: '11px', color: '#d32f2f', marginTop: '6px' }}>{loginErr}</div>}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                    <button onClick={handleStaffLogin} disabled={loginBusy}
+                      style={{ flex: 1, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '6px', padding: '9px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', opacity: loginBusy ? 0.6 : 1 }}>
+                      {loginBusy ? '로그인 중…' : '로그인'}
+                    </button>
+                    <button onClick={() => setCustomerModal(false)}
+                      style={{ flex: 1, background: '#f0ede8', color: 'var(--text)', border: 'none', borderRadius: '6px', padding: '9px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                      닫기
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '10px' }}>영업사원은 담당 거래처만, 대표·매니저는 전체 거래처가 보입니다. 로그인은 이 브라우저에 유지됩니다.</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--muted)', marginBottom: '8px' }}>
+                    <span>로그인: <b>{staff.label}</b> · 거래처 {customers.length}곳</span>
+                    <a style={{ fontWeight: 700, color: '#c0392b', cursor: 'pointer' }} onClick={handleStaffLogout}>로그아웃</a>
+                  </div>
+                  <input value={customerQuery} onChange={e => setCustomerQuery(e.target.value)} placeholder="거래처명 · 코드 · 담당 코드 검색…" autoFocus style={{ ...inputStyle, marginBottom: '8px' }} />
+                  <div
+                    onClick={() => pickCustomer(null)}
+                    style={{ padding: '8px 10px', borderRadius: '6px', border: `1px solid ${customer ? 'var(--border)' : 'var(--accent)'}`, background: customer ? '#fff' : '#fef3c7', cursor: 'pointer', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}
+                  >
+                    거래처 미설정 — 기본 현금할인가로 만들기
+                  </div>
+                  <div style={{ flex: 1, minHeight: 0, maxHeight: '46vh', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '6px' }}>
+                    {list.length === 0 ? (
+                      <div style={{ padding: '24px 0', textAlign: 'center', fontSize: '12px', color: 'var(--muted)' }}>{customers.length === 0 ? '보이는 거래처가 없습니다' : '검색 결과 없음'}</div>
+                    ) : list.map(c => {
+                      const active = customer?.id === c.id;
+                      return (
+                        <div key={c.id} onClick={() => pickCustomer(c)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 10px', borderBottom: '1px solid #f0ebe3', cursor: 'pointer', background: active ? '#e0ebff' : '#fff', opacity: c.is_active === false ? 0.5 : 1 }}>
+                          <span style={{ flex: 1, minWidth: 0, fontSize: '12px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: active ? '#1d4ed8' : 'var(--text)' }}>{c.name}</span>
+                          <span style={{ fontSize: '10px', color: 'var(--muted)', flexShrink: 0 }}>{c.id}{c.assigned_sales_rep_code ? ` · 담당 ${c.assigned_sales_rep_code}` : ''}{c.is_active === false ? ' · 비활성' : ''}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                    <button onClick={() => setCustomerModal(false)}
+                      style={{ flex: 1, background: '#f0ede8', color: 'var(--text)', border: 'none', borderRadius: '6px', padding: '9px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                      닫기 (Esc)
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Toast ── */}
       <div className={`toast ${toast ? 'show' : ''}`}>{toast}</div>

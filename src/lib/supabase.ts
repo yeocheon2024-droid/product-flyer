@@ -160,3 +160,145 @@ export function formatPrice(price: number): string {
   if (!price || price <= 0) return '-';
   return price.toLocaleString('ko-KR') + '원';
 }
+
+// ══════════════════════════════════════════════════════════════════
+// 거래처 단가 연동 (2026-10-20, v4.5)
+//   수발주 관리자(admin.jiguorder.com)와 같은 Supabase 프로젝트를 쓴다.
+//   customers / customer_pricing 은 RLS 로 직원(owner·manager·sales_rep)만 읽을 수 있어
+//   관리자 앱과 같은 계정으로 로그인한 뒤 읽는다 (영업사원은 담당 거래처만 보인다).
+// ══════════════════════════════════════════════════════════════════
+
+/** 관리자 앱의 가짜 이메일 도메인 — 로그인 ID → 이메일 변환 규칙이 order-admin/src/lib/auth.ts 와 같아야 한다 */
+const FAKE_EMAIL_DOMAIN = 'jigufood.local';
+
+export interface Customer {
+  id: string;
+  name: string;
+  assigned_sales_rep_code: string | null;
+  is_active: boolean | null;
+}
+
+export interface StaffUser {
+  userId: string;
+  role: string;
+  /** 화면 표시용 (영업사원 코드 또는 이메일) */
+  label: string;
+}
+
+/**
+ * 직원 로그인 — 관리자 앱과 동일한 3가지 입력 형식
+ *   1) jn3333_1 형식 로그인 ID → RPC 로 영업사원 코드 조회 → rep_<code>@도메인
+ *   2) 사번(03) → rep_03@도메인
+ *   3) 이메일 → 그대로 (대표/매니저)
+ */
+export async function loginStaff(
+  idInput: string,
+  password: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!supabase) return { ok: false, error: 'Supabase 설정이 없습니다.' };
+  const id = idInput.trim();
+  const pw = password.trim();
+  if (!id) return { ok: false, error: '아이디를 입력해 주세요.' };
+  if (pw.length < 4) return { ok: false, error: '비밀번호는 4자 이상이어야 합니다.' };
+
+  let email: string;
+  if (id.includes('@')) {
+    email = id;
+  } else if (/^jn\d+_\d+$/i.test(id)) {
+    const { data: code, error: rpcErr } = await supabase.rpc('sales_rep_code_by_login_id', { lid: id.toLowerCase() });
+    if (rpcErr) {
+      if (rpcErr.message?.includes('too_many_requests')) return { ok: false, error: '로그인 시도가 너무 많습니다. 10분 후 다시 시도해 주세요.' };
+      return { ok: false, error: '로그인 처리 중 오류가 발생했습니다.' };
+    }
+    if (!code) return { ok: false, error: '아이디 또는 비밀번호가 맞지 않습니다.' };
+    email = `rep_${code}@${FAKE_EMAIL_DOMAIN}`;
+  } else {
+    email = `rep_${id}@${FAKE_EMAIL_DOMAIN}`;
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
+  if (error) {
+    if (error.message.includes('Invalid login credentials')) return { ok: false, error: '아이디 또는 비밀번호가 맞지 않습니다.' };
+    if (/rate limit/i.test(error.message)) return { ok: false, error: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.' };
+    return { ok: false, error: error.message };
+  }
+  // 거래처 계정 등 직원이 아니면 바로 로그아웃
+  const staff = await getStaff();
+  if (!staff) {
+    await supabase.auth.signOut();
+    return { ok: false, error: '직원(관리자·영업사원) 계정만 쓸 수 있습니다.' };
+  }
+  return { ok: true };
+}
+
+/** 현재 세션의 직원 정보 — 세션이 없거나 거래처 계정이면 null */
+export async function getStaff(): Promise<StaffUser | null> {
+  if (!supabase) return null;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const user = sessionData.session?.user;
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role, ref_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  const role = (profile as { role?: string; ref_id?: string | null } | null)?.role;
+  if (!role || !['owner', 'manager', 'sales_rep'].includes(role)) return null;
+  const refId = (profile as { ref_id?: string | null }).ref_id;
+  const label = role === 'sales_rep' && refId ? `영업사원 ${refId}` : (user.email || role);
+  return { userId: user.id, role, label };
+}
+
+export async function logoutStaff(): Promise<void> {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+}
+
+/** 거래처 목록 (RLS: 영업사원은 담당 거래처만) — 1,000행 넘어도 누락 없이 */
+export async function fetchCustomers(): Promise<Customer[]> {
+  if (!supabase) return [];
+  const pageSize = 1000;
+  const all: Customer[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from('customers')
+      .select('id, name, assigned_sales_rep_code, is_active')
+      .order('name', { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) {
+      console.error('거래처 목록 로드 실패:', error);
+      return all;
+    }
+    const page = (data || []) as Customer[];
+    all.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return all;
+}
+
+/**
+ * 거래처 한 곳의 단가 — 품목코드 → 단가(원). 같은 품목이 여러 행이면 valid_from 최신값.
+ * (관리자 앱 src/lib/customerPricing.ts 와 같은 규칙)
+ */
+export async function fetchCustomerPriceMap(customerId: string): Promise<Record<string, number>> {
+  if (!supabase) return {};
+  const { data, error } = await supabase
+    .from('customer_pricing')
+    .select('product_code, unit_price, valid_from')
+    .eq('customer_id', customerId)
+    .limit(100000);
+  if (error) {
+    console.error('거래처 단가 로드 실패:', error);
+    return {};
+  }
+  const latestFrom: Record<string, string> = {};
+  const out: Record<string, number> = {};
+  for (const r of (data || []) as { product_code: string; unit_price: number; valid_from: string | null }[]) {
+    const from = r.valid_from || '';
+    if (latestFrom[r.product_code] === undefined || latestFrom[r.product_code] < from) {
+      latestFrom[r.product_code] = from;
+      out[r.product_code] = Number(r.unit_price);
+    }
+  }
+  return out;
+}

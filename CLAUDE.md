@@ -66,6 +66,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
   그동안 PNG/PDF 버튼이 잠긴다. 좌측 품목 목록 썸네일은 `loading="lazy"` (html2canvas 가 문서 전체를 복제해 로드 완료를 기다리므로).
   품질을 더 올리려면 `PDF_SCALE`/`PNG_SCALE` 만 바꾸면 된다.
 
+- **거래처 단가 연동** (2026-10-20, v4.5): 수발주 관리자(admin.jiguorder.com, 같은 Supabase 프로젝트)의 `customer_pricing` 을 불러와
+  전단지 가격으로 쓴다. 좌측 패널 "거래처 단가" 블록과 품목 고르기 상단 바의 🏪 버튼 → 거래처 선택 모달.
+  `customers`/`customer_pricing` 은 RLS 로 직원만 읽을 수 있어 **관리자 앱과 같은 계정으로 로그인**(`loginStaff`, 가짜 이메일 규칙은
+  order-admin `src/lib/auth.ts` 와 동일 — `rep_<code>@jigufood.local`)해야 하고, 영업사원은 담당 거래처만 보인다. 세션은 브라우저에 유지.
+  가격 우선순위: 손으로 고친 값(빨강) > 거래처 단가(파랑, 품목별 valid_from 최신) > 기본 현금할인가(`products.sell`). 거래처 미설정이면 기본가.
+  선택한 거래처는 localStorage 작업 저장에 포함돼 새로고침 후에도 유지되며, 로그인이 풀리면 "(로그인 필요)" 로 표시되고 기본가로 만든다.
+  전단지 본문(제목·문구)에는 거래처명이 들어가지 않는다.
+
 ## 규칙
 1. QR코드 스캔 가능 여부 테스트 (PNG 다운로드 후 확인)
 2. 인쇄 해상도 유지 (html2canvas scale 설정 주의)
