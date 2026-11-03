@@ -21,8 +21,8 @@ export default function PromoDuplexPage() {
           ...product,
           image_url: getImageUrl(product) || product.image_url,
         }));
-      if (catalog.length < 4) {
-        throw new Error('행사가가 등록된 상품이 4개 미만이라 양면 전단을 만들 수 없습니다.');
+      if (catalog.filter(p => p.sell > 0 && !p.sold_out).length < 8) {
+        throw new Error('행사가가 등록된 상품이 8개 미만이라 양면 전단을 만들 수 없습니다.');
       }
       setProducts(catalog);
     } catch (loadError) {
@@ -62,6 +62,6 @@ export default function PromoDuplexPage() {
     );
   }
 
-  // DB 상품을 모두 받은 뒤 마운트해야 기본 특가 슬롯 4개가 정확히 생성된다.
+  // DB 상품을 모두 받은 뒤 마운트해야 기본 특가 슬롯 8개가 정확히 생성된다.
   return <MarketingFlyerWorkspace initialProducts={products} />;
 }

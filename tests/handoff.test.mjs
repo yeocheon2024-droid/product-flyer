@@ -65,7 +65,7 @@ test("브랜드 연락처와 QR은 편집할 수 있고 QR은 HTTPS 주소만 �
   assert.match(editor, /앞면 QR 제목/);
   assert.match(editor, /뒷면 QR 하단 문구/);
   assert.match(document, /backPage\.cta\?\.platformLabel/);
-  assert.match(document, /isJiguorderPlayStoreUrl\(qrTargetUrl\)/);
+  assert.match(document, /isJiguorderPlayStoreUrl\(template\.qrTargetUrl\)/);
 });
 
 test("브라우저 인쇄에서도 양면 전단 미리보기가 표시된다", async () => {

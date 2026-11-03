@@ -1,3 +1,5 @@
+export const HERO_PRODUCT_LIMIT = 8;
+export const MIN_HERO_PRODUCTS = 8;
 export const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=com.jiguorder.customer";
 export const MAX_QR_URL_LENGTH = 700;
@@ -197,7 +199,7 @@ export function normalizeHeroProducts(products = [], overrides = {}) {
         flyerPrice,
         badge: normalizeText(
           override.heroBadge ?? override.badge ?? product.heroBadge,
-          "수량 한정 초특가",
+          "추천 상품",
           24,
         ),
         rank: normalizePrice(
@@ -218,7 +220,7 @@ export function normalizeHeroProducts(products = [], overrides = {}) {
     })
     .filter((product) => product.flyerPrice > 0)
     .sort((left, right) => left.rank - right.rank)
-    .slice(0, 4)
+    .slice(0, HERO_PRODUCT_LIMIT)
     .map((product, index) => ({ ...product, rank: index + 1 }));
 }
 
@@ -268,6 +270,15 @@ export function buildTemplateFromCatalog(products = [], overrides = {}) {
   const backOverrides = overrides.backPage ?? {};
   const rangeOverrides = frontOverrides.rangeSummary ?? {};
   const heroOverrides = frontOverrides.heroProducts ?? overrides.heroProducts ?? {};
+  const saved = Array.isArray(heroOverrides) ? heroOverrides : null;
+  const preferred = [/쌀/, /식용유|콩기름/, /김치/, /계란|특란|대란/, /고추.*가루|고춧가루/, /간장/, /대파/, /설탕/];
+  const defaults = [];
+  preferred.forEach(pattern => {
+    const product = products.find(p => isVisibleProduct(p) && p.sell > 0 && pattern.test(`${p.display_name || ''} ${p.name || ''}`) && !defaults.includes(p));
+    if (product) defaults.push(product);
+  });
+  const selectedCatalog = saved ? saved.map(item => products.find(p => String(p.code ?? p.id) === String(item.code ?? item.sourceCode))).filter(Boolean) : [...defaults, ...products.filter(p => !defaults.includes(p))];
+  const selectedProducts = normalizeHeroProducts(selectedCatalog, heroOverrides).slice(0, 8);
   const qrTargetUrl = normalizeQrTargetUrl(overrides.qrTargetUrl);
   const qrCopy = defaultQrCopyForUrl(qrTargetUrl);
 
@@ -286,12 +297,13 @@ export function buildTemplateFromCatalog(products = [], overrides = {}) {
     frontPage: {
       headline: normalizeText(
         frontOverrides.headline,
-        "매일 쓰는 식자재, 가격부터 확 낮췄습니다!",
+        "필요한 식자재, 한 번에!",
         60,
       ),
       statusPill: normalizeText(frontOverrides.statusPill, "가격 검토용 초안", 24),
-      heroProducts: normalizeHeroProducts(products, heroOverrides),
+      heroProducts: selectedProducts,
       rangeSummary: {
+        categories: computeCatalogCategories(products),
         goodsCount: normalizeCount(rangeOverrides.goodsCount, stats.goodsCount),
         vegetableCount: normalizeCount(rangeOverrides.vegetableCount, stats.vegetableCount),
         totalCount: normalizeCount(rangeOverrides.totalCount, stats.totalCount),
@@ -365,10 +377,10 @@ export function buildTemplateFromCatalog(products = [], overrides = {}) {
 
 export function validateTemplate(template) {
   const errors = [];
-  if (template?.frontPage?.heroProducts?.length !== 4) {
-    errors.push("특가상품을 정확히 4개 선택해 주세요.");
+  if (!template?.frontPage?.heroProducts || template.frontPage.heroProducts.length !== 8) {
+    errors.push("추천 상품을 8개 선택해 주세요.");
   }
-  if (new Set(template?.frontPage?.heroProducts?.map((product) => product.code)).size !== 4) {
+  if (new Set(template?.frontPage?.heroProducts?.map((product) => product.code)).size !== template?.frontPage?.heroProducts?.length) {
     errors.push("같은 상품을 중복 선택할 수 없습니다.");
   }
   if (!isValidQrTargetUrl(template?.qrTargetUrl)) {
@@ -386,4 +398,19 @@ export function validateTemplate(template) {
     }
   });
   return errors;
+}
+
+// 카탈로그 전체 대분류와 중분류를 사용하며 선택한 특가상품에 한정하지 않는다.
+export function computeCatalogCategories(products = []) {
+  const groups = new Map();
+  products.filter(isVisibleProduct).forEach(product => {
+    const name = normalizeText(product.major_name ?? product.category, '기타', 40);
+    if (!groups.has(name)) groups.set(name, { name, count: 0, children: new Set(), imageUrl: '' });
+    const group = groups.get(name);
+    group.count++;
+    const child = normalizeText(product.minor_name, '', 40);
+    if (child && child !== name) group.children.add(child);
+    if (!group.imageUrl && (product.image_url || product.imageUrl)) group.imageUrl = normalizeImageUrl(product.image_url || product.imageUrl);
+  });
+  return [...groups.values()].map(group => ({ ...group, children: [...group.children] }));
 }

@@ -83,6 +83,17 @@ export function MarketingFlyerEditor({ template, catalog, onChange, onRecalculat
     if (normalized) updateProduct(index, { ...normalized, rank: index + 1 });
   };
 
+  const setProducts = products => updateFront('heroProducts', products.map((p, index) => ({ ...p, rank: index + 1 })));
+  const addProduct = code => {
+    const product = catalog.find(p => String(p.code ?? p.id) === code);
+    const normalized = normalizeHeroProducts(product ? [product] : [])[0];
+    if (normalized && template.frontPage.heroProducts.length < 8) setProducts([...template.frontPage.heroProducts, normalized]);
+  };
+  const moveProduct = (index, delta) => {
+    const next = [...template.frontPage.heroProducts];
+    [next[index], next[index + delta]] = [next[index + delta], next[index]];
+    setProducts(next);
+  };
   const updateBack = (key, value) =>
     onChange({ ...template, backPage: { ...template.backPage, [key]: value } });
 
@@ -194,15 +205,19 @@ export function MarketingFlyerEditor({ template, catalog, onChange, onRecalculat
       </details>
 
       <details open>
-        <summary>1면 특가상품</summary>
+        <summary>앞면 추천 상품 · {template.frontPage.heroProducts.length}/8개</summary>
+        <p className="mkt-editor-help">상품 4개씩 2줄, 총 8개가 배치됩니다. 삭제 후 아래 검색으로 다른 상품을 추가하세요.</p>
         <div className="mkt-fields">
-          <Field label="메인 문구" wide><input value={template.frontPage.headline} onChange={(event) => updateFront("headline", event.target.value)} /></Field>
-          <Field label="상태 문구" wide><input value={template.frontPage.statusPill} onChange={(event) => updateFront("statusPill", event.target.value)} /></Field>
+          <p className="mkt-editor-help">상단 로고·문구·상품 사진은 첨부 원본 디자인을 그대로 사용합니다.</p>
+          
         </div>
         <div className="mkt-editor__products">
           {template.frontPage.heroProducts.map((product, index) => (
             <section className="mkt-editor-product" key={`${product.code}-${index}`}>
-              <strong>{index + 1}번 특가</strong>
+              <div className="mkt-product-actions"><strong>{index + 1}번 상품</strong>
+              <button type="button" aria-label={(index+1)+"번 상품 위로"} disabled={index === 0} onClick={() => moveProduct(index, -1)}>↑</button>
+              <button type="button" aria-label={(index+1)+"번 상품 아래로"} disabled={index === template.frontPage.heroProducts.length-1} onClick={() => moveProduct(index, 1)}>↓</button>
+              <button type="button" onClick={() => setProducts(template.frontPage.heroProducts.filter((_, i) => i !== index))}>삭제</button></div>
               <ProductSearchPicker
                 catalog={catalog}
                 value={product.code}
@@ -222,6 +237,8 @@ export function MarketingFlyerEditor({ template, catalog, onChange, onRecalculat
           ))}
         </div>
       </details>
+
+      {template.frontPage.heroProducts.length < 8 && <div className="mkt-add-product"><strong>상품 추가 · 최대 8개</strong><ProductSearchPicker catalog={catalog} value="" selectedCodes={template.frontPage.heroProducts.map(p => String(p.code))} slotNumber={template.frontPage.heroProducts.length+1} onSelect={addProduct} /></div>}
 
       <details>
         <summary>취급품목 숫자</summary>

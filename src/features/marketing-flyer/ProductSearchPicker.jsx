@@ -117,7 +117,7 @@ export function ProductSearchPicker({ catalog, value, selectedCodes = [], slotNu
     >
       <div className="mkt-product-picker__selected">
         <span>현재 선택</span>
-        <strong>{selected ? productName(selected) : "선택 상품을 찾을 수 없습니다"}</strong>
+        <strong>{selected ? productName(selected) : (value ? "선택 상품을 찾을 수 없습니다" : "검색해서 상품을 추가하세요")}</strong>
         {selected && <small>{productMeta(selected)}</small>}
       </div>
 

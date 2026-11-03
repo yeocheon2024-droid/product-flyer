@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MarketingFlyerDocument } from "./MarketingFlyerDocument.jsx";
 import { MarketingFlyerEditor } from "./MarketingFlyerEditor.jsx";
 import { downloadTemplateJson, exportDuplexPdf, exportDuplexPng } from "./exportFlyer.js";
-import { buildTemplateFromCatalog, computeCategoryStats, validateTemplate } from "./model.js";
+import { buildTemplateFromCatalog, computeCategoryStats, computeCatalogCategories, validateTemplate } from "./model.js";
 import { createQrDataUrl } from "./qr.js";
 
 
@@ -13,6 +13,7 @@ import { createQrDataUrl } from "./qr.js";
 export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides = {} }) {
   const catalog = useMemo(() => initialProducts.map((product) => ({ ...product })), [initialProducts]);
   const [template, setTemplate] = useState(() => buildTemplateFromCatalog(catalog, initialOverrides));
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [status, setStatus] = useState("");
   const [priceApproved, setPriceApproved] = useState(false);
@@ -35,6 +36,19 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
     };
   }, [template.qrTargetUrl]);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('jigu-promo-reference-eight-v3');
+      if (saved) setTemplate(buildTemplateFromCatalog(catalog, JSON.parse(saved)));
+    } catch { setStatus('저장된 작업을 불러오지 못했습니다.'); }
+    setDraftLoaded(true);
+  }, [catalog]);
+  useEffect(() => {
+    if (!draftLoaded) return;
+    try { localStorage.setItem('jigu-promo-duplex-v2', JSON.stringify(template)); }
+    catch { setStatus('이 브라우저에 자동 저장하지 못했습니다. 설정 파일로 저장해 주세요.'); }
+  }, [template, draftLoaded]);
+
   const runExport = async (kind) => {
     if (errors.length > 0 || !qrDataUrl || !priceApproved || !documentRoot.current) return;
     setStatus(`${kind.toUpperCase()} 파일을 만드는 중입니다…`);
@@ -48,7 +62,7 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
   };
 
   const recalculate = () => {
-    const rangeSummary = { ...template.frontPage.rangeSummary, ...computeCategoryStats(catalog) };
+    const rangeSummary = { ...template.frontPage.rangeSummary, ...computeCategoryStats(catalog), categories: computeCatalogCategories(catalog) };
     updateTemplate({ ...template, frontPage: { ...template.frontPage, rangeSummary } });
   };
 
@@ -69,13 +83,18 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
       const savedCodes = Array.isArray(savedProducts)
         ? savedProducts.map((product) => String(product?.code || "").trim()).filter(Boolean)
         : [];
-      if (savedCodes.length !== 4 || new Set(savedCodes).size !== 4) {
-        throw new Error("설정 파일의 특가상품 코드 4개를 확인해 주세요.");
+      if (![4, 8, 9, 10].includes(savedCodes.length) || new Set(savedCodes).size !== savedCodes.length) {
+        throw new Error("설정 파일의 상품 코드 8개를 확인해 주세요.");
       }
       const catalogCodes = new Set(catalog.map((product) => String(product.code ?? product.id)));
       const missingCodes = savedCodes.filter((code) => !catalogCodes.has(code));
       if (missingCodes.length > 0) {
         throw new Error(`현재 상품 DB에서 찾을 수 없는 코드: ${missingCodes.join(", ")}`);
+      }
+      // 이전 4개 상품 설정은 기존 상품을 보존하고 8개로 확장한다.
+      if (savedCodes.length === 4) {
+        const extras = catalog.filter(p => !savedCodes.includes(String(p.code ?? p.id)) && !p.hidden && !p.sold_out && p.sell > 0).slice(0, 4);
+        payload.frontPage.heroProducts = [...savedProducts, ...extras.map((p, i) => ({ code: p.code, rank: i+5 }))];
       }
       const restored = buildTemplateFromCatalog(catalog, payload);
       const restoredErrors = validateTemplate(restored);
@@ -101,13 +120,14 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
         <div className="mkt-toolbar">
           <div>
             <strong>양면 미리보기</strong>
-            <span>A4 세로 · 2페이지</span>
+            <span>A4 양면 · 상품 8개 · 자동 저장</span>
           </div>
           <div className="mkt-toolbar__actions">
             <a className="mkt-button mkt-button--ghost" href="/">기존 전단</a>
             <button className="mkt-button mkt-button--ghost" type="button" onClick={() => importInput.current?.click()}>설정 불러오기</button>
             <button className="mkt-button mkt-button--ghost" type="button" onClick={() => downloadTemplateJson(template)}>설정 JSON</button>
             <button className="mkt-button mkt-button--secondary" type="button" disabled={errors.length > 0 || !qrDataUrl || !priceApproved} onClick={() => runExport("png")}>PNG 2장</button>
+            <button className="mkt-button mkt-button--ghost" type="button" disabled={errors.length > 0 || !qrDataUrl || !priceApproved} onClick={() => window.print()}>양면 인쇄</button>
             <button className="mkt-button mkt-button--primary" type="button" disabled={errors.length > 0 || !qrDataUrl || !priceApproved} onClick={() => runExport("pdf")}>양면 PDF</button>
             <input ref={importInput} type="file" accept="application/json,.json" hidden onChange={importTemplateJson} />
           </div>

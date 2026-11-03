@@ -47,7 +47,7 @@ test("전단 QR은 사용자가 입력한 안전한 HTTPS 주소를 유지한다
   assert.equal(normalizeQrTargetUrl("https://user:password@example.com/order"), PLAY_STORE_URL);
 });
 
-test("라이브 DB 상품 필드를 전단 특가 카드 네 개로 불변 변환한다", () => {
+test("라이브 DB 상품 필드를 전단 특가 카드 최대 열 개로 불변 변환한다", () => {
   const products = [
     { code: "RICE-1", display_name: "칼로스 쌀", spec: "20kg", major_name: "쌀", sell: 49000, image_url: "https://cdn.example.com/rice.png" },
     { code: "KIMCHI-1", name: "배추김치", spec: "10kg", major_name: "김치", sell: 14500 },
@@ -60,7 +60,7 @@ test("라이브 DB 상품 필드를 전단 특가 카드 네 개로 불변 변�
     "RICE-1": { flyerPrice: 45900, heroBadge: "대표 특가", heroRank: 1 },
   });
 
-  assert.equal(featured.length, 4);
+  assert.equal(featured.length, 5);
   assert.deepEqual(products, snapshot);
   assert.deepEqual(featured[0], {
     code: "RICE-1",
@@ -109,7 +109,7 @@ test("양면 템플릿 기본 계약에는 배송 마감과 앱 QR이 포함된�
 });
 
 test("사용자 QR의 기본 안내 문구는 Google Play 전용 표현을 남기지 않는다", () => {
-  const products = ["A", "B", "C", "D"].map((code, index) => ({
+  const products = ["A", "B", "C", "D", "E", "F", "G", "H"].map((code, index) => ({
     code,
     name: `상품 ${code}`,
     sell: (index + 1) * 1000,
@@ -165,7 +165,7 @@ test("배열형 특가 override와 편집 가능한 양면 문구를 반영한�
 });
 
 test("완성 전단 검증은 상품 개수·중복·가격·QR 오류를 모두 알린다", () => {
-  const products = ["A", "B", "C", "D"].map((code, index) => ({
+  const products = ["A", "B", "C", "D", "E", "F", "G", "H"].map((code, index) => ({
     code,
     name: `상품 ${code}`,
     sell: (index + 1) * 1000,
@@ -190,11 +190,11 @@ test("완성 전단 검증은 상품 개수·중복·가격·QR 오류를 모두
   assert.ok(errors.some((error) => error.includes("https://")));
   assert.ok(errors.some((error) => error.includes("행사가")));
   const short = { ...valid, frontPage: { ...valid.frontPage, heroProducts: [] } };
-  assert.ok(validateTemplate(short).some((error) => error.includes("정확히 4개")));
+  assert.ok(validateTemplate(short).some((error) => error.includes("8개")));
 });
 
 test("저장한 상품명·규격·배지·순서·전단가격을 JSON에서 복원한다", () => {
-  const products = ["A", "B", "C", "D"].map((code, index) => ({ code, name: `상품 ${code}`, sell: (index + 1) * 1000 }));
+  const products = ["A", "B", "C", "D", "E", "F", "G", "H"].map((code, index) => ({ code, name: `상품 ${code}`, sell: (index + 1) * 1000 }));
   const first = buildTemplateFromCatalog(products);
   first.frontPage.heroProducts[0] = {
     ...first.frontPage.heroProducts[0],
@@ -214,7 +214,7 @@ test("저장한 상품명·규격·배지·순서·전단가격을 JSON에서 �
 });
 
 test("수정한 브랜드 연락처와 HTTPS QR 주소를 JSON에서 복원한다", () => {
-  const products = ["A", "B", "C", "D"].map((code, index) => ({
+  const products = ["A", "B", "C", "D", "E", "F", "G", "H"].map((code, index) => ({
     code,
     name: `상품 ${code}`,
     sell: (index + 1) * 1000,
@@ -241,7 +241,7 @@ test("수정한 브랜드 연락처와 HTTPS QR 주소를 JSON에서 복원한�
 });
 
 test("배송 권역을 비우는 설정도 JSON에서 그대로 유지한다", () => {
-  const products = ["A", "B", "C", "D"].map((code, index) => ({
+  const products = ["A", "B", "C", "D", "E", "F", "G", "H"].map((code, index) => ({
     code,
     name: `상품 ${code}`,
     sell: (index + 1) * 1000,
