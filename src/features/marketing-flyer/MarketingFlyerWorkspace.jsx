@@ -1,3 +1,4 @@
+import { ORDER_SITE_URL } from './OrderPhotoGuide.jsx';
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MarketingFlyerDocument } from "./MarketingFlyerDocument.jsx";
@@ -15,6 +16,7 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
   const [template, setTemplate] = useState(() => buildTemplateFromCatalog(catalog, initialOverrides));
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
+  const [orderQrDataUrl, setOrderQrDataUrl] = useState("");
   const [status, setStatus] = useState("");
   const [priceApproved, setPriceApproved] = useState(false);
   const documentRoot = useRef(null);
@@ -28,8 +30,8 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
 
   useEffect(() => {
     let active = true;
-    createQrDataUrl(template.qrTargetUrl)
-      .then((value) => active && setQrDataUrl(value))
+    Promise.all([createQrDataUrl(template.qrTargetUrl), createQrDataUrl(ORDER_SITE_URL)])
+      .then(([value, orderValue]) => { if (active) { setQrDataUrl(value); setOrderQrDataUrl(orderValue); } })
       .catch(() => active && setQrDataUrl(""));
     return () => {
       active = false;
@@ -149,7 +151,7 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
         {status && <div className="mkt-status" role="status">{status}</div>}
 
         <div className="mkt-preview" ref={documentRoot}>
-          <MarketingFlyerDocument template={template} qrDataUrl={qrDataUrl} />
+          <MarketingFlyerDocument template={template} qrDataUrl={qrDataUrl} orderQrDataUrl={orderQrDataUrl} />
         </div>
       </main>
     </div>

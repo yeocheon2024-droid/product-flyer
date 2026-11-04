@@ -31,3 +31,34 @@
 .reference-footer span{font-size:35px;line-height:1}
 .reference-footer p{font-size:12px;line-height:1.5;margin:0}
 .reference-footer strong{font-size:30px;letter-spacing:-1px}
+
+/* 안내 문구: 기존 9px에서 2px씩 3단계 확대. */
+.fresh-delivery-notices{margin:8px 0 10px}
+.fresh-delivery-notices p{margin:3px 0;font-size:15px;line-height:1.45;color:#354b3b;word-break:keep-all}
+.fresh-delivery-notices b{font-weight:800;color:#075639}
+.order-photo-guide{margin:8px 0 12px;min-height:0;flex:1}
+.order-photo-guide-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:12px}
+.order-photo-guide-heading h2{font-size:19px;margin:0 0 4px}
+.order-photo-guide-heading a{font-size:12px;font-weight:800;color:#075639;text-decoration:underline;text-underline-offset:3px}
+.order-guide-qr{display:flex;align-items:center;gap:6px;flex:none}
+.order-guide-qr img{width:48px;height:48px;padding:2px;background:#fff;object-fit:contain}
+.order-guide-qr span{font-size:10px;width:52px;line-height:1.4;color:#526656}
+.fresh-order .order-photo-guide-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.order-guide-screen{height:150px;position:relative;border:1px solid #cfdacf;border-radius:8px;background:#fff;overflow:hidden;padding:7px 8px 15px;box-sizing:border-box;color:#163e30}
+.order-guide-screen-top{display:flex;align-items:center;gap:4px;border-bottom:1px solid #eef1eb;padding-bottom:4px;margin-bottom:5px}
+.order-guide-screen-top img{width:14px;height:14px;object-fit:contain}.order-guide-screen-top b{font-size:10px}.order-guide-screen-top>span{margin-left:auto;font-size:8px;color:#788578}
+.order-guide-welcome{font-size:8px;line-height:1.4;margin-bottom:5px}.order-guide-welcome b{font-size:11px}
+.order-guide-category-photos{display:grid!important;grid-template-columns:repeat(4,1fr);gap:3px}.order-guide-category-photos>div{text-align:center}.order-guide-category-photos img{width:26px;height:28px;object-fit:contain}.order-guide-category-photos span{display:block;font-size:7px;color:#42604a}
+.order-guide-example-button{display:block!important;text-align:center;background:#087b55;color:white;font-size:9px;font-weight:800;padding:5px 3px;border-radius:4px;margin-top:7px;line-height:1.15}
+.order-guide-example-label{position:absolute;bottom:3px;left:0;right:0;text-align:center;color:#8c998e;font-size:6px}
+.order-guide-search{border:1px solid #b9cabe;border-radius:4px;padding:4px;font-size:7px;color:#758779;white-space:nowrap}
+.order-guide-product-photo{display:flex;align-items:center;gap:7px;margin-top:5px}.order-guide-product-photo img{width:39px;height:45px;object-fit:contain}.order-guide-product-photo b{font-size:9px;display:block}.order-guide-product-photo small{font-size:7px;color:#718174}
+.order-guide-quantity{font-size:9px;text-align:right;height:9px;line-height:1}
+.order-guide-screen-heading{font-size:11px;display:block;margin:4px 0}.order-guide-cart-item{display:flex;align-items:center;gap:7px;border-bottom:1px solid #edf0e9;padding:3px 0}.order-guide-cart-item img{width:29px;height:29px;object-fit:contain}.order-guide-cart-item b,.order-guide-cart-item span{display:block;font-size:8px}.order-guide-cart-item span{color:#6d8172;margin-top:2px}
+.order-guide-confirm-icon{border-radius:50%;background:#e7f2e9;color:#087b55;font-size:20px;line-height:29px;width:29px;text-align:center;margin:4px auto}.order-guide-screen:has(.order-guide-confirm-icon){text-align:center}.fresh-order .order-guide-confirm-copy{font-size:8px;line-height:1.4;margin:3px 0}.order-guide-orders-label{font-size:7px;margin-top:4px}
+.order-guide-step-title{display:flex;gap:5px;align-items:baseline;margin-top:7px}.fresh-order .order-guide-step-title span{font-size:12px;font-weight:900;color:#a3853f}.fresh-order .order-guide-step-title h3{font-size:12px;margin:0;letter-spacing:-.3px}
+.fresh-order .order-photo-guide-steps>article>p{font-size:10px;line-height:1.5;margin:4px 0 0;color:#3e5645;word-break:keep-all}
+.fresh-order .order-guide-footnote{font-size:8px;line-height:1.4;color:#768575;margin-top:7px}
+.fresh-back .fresh-back-title{margin-top:18px;margin-bottom:12px}.fresh-back .fresh-back-title h1{font-size:34px}
+.fresh-back .fresh-categories article{padding-top:9px;padding-bottom:9px}
+.fresh-order .order-photo-guide-heading{display:flex}.fresh-back .fresh-back-title h1{font-size:30px;line-height:1.2}.fresh-back .fresh-back-title h1 br{display:none}.fresh-back .fresh-back-title h1 em{margin-left:8px}.order-guide-screen{height:140px}

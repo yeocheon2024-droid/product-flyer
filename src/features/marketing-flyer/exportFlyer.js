@@ -68,6 +68,19 @@ export async function exportDuplexPdf(root, filename) {
     const canvas = await renderPage(page);
     if (index > 0) pdf.addPage("a4", "portrait");
     pdf.addImage(canvas.toDataURL("image/jpeg", 0.94), "JPEG", 0, 0, 210, 297, undefined, "FAST");
+    // 캡처 이미지 위에도 웹 주문 안내 링크를 눌러 열 수 있도록 PDF 링크를 보존한다.
+    const pageBounds = page.getBoundingClientRect();
+    for (const link of page.querySelectorAll('a[href^="https://"]')) {
+      const bounds = link.getBoundingClientRect();
+      if (!pageBounds.width || !pageBounds.height || !bounds.width) continue;
+      pdf.link(
+        (bounds.left - pageBounds.left) / pageBounds.width * 210,
+        (bounds.top - pageBounds.top) / pageBounds.height * 297,
+        bounds.width / pageBounds.width * 210,
+        bounds.height / pageBounds.height * 297,
+        { url: link.href },
+      );
+    }
   }
   pdf.save(safeFilename(filename, "pdf"));
 }
