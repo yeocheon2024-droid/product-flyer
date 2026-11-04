@@ -18,6 +18,7 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [orderQrDataUrl, setOrderQrDataUrl] = useState("");
   const [status, setStatus] = useState("");
+  const [exporting, setExporting] = useState(false);
   const [priceApproved, setPriceApproved] = useState(false);
   const documentRoot = useRef(null);
   const importInput = useRef(null);
@@ -52,14 +53,17 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
   }, [template, draftLoaded]);
 
   const runExport = async (kind) => {
-    if (errors.length > 0 || !qrDataUrl || !priceApproved || !documentRoot.current) return;
-    setStatus(`${kind.toUpperCase()} 파일을 만드는 중입니다…`);
+    if (exporting || errors.length > 0 || !qrDataUrl || !priceApproved || !documentRoot.current) return;
+    setExporting(true);
+    setStatus(`상품 사진을 준비하고 ${kind.toUpperCase()} 파일을 만드는 중입니다…`);
     try {
       if (kind === "pdf") await exportDuplexPdf(documentRoot.current, "지구농산_양면_홍보전단");
       if (kind === "png") await exportDuplexPng(documentRoot.current, "지구농산_양면_홍보전단");
       setStatus("저장이 완료되었습니다.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "내보내기에 실패했습니다.");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -128,9 +132,9 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
             <a className="mkt-button mkt-button--ghost" href="/">기존 전단</a>
             <button className="mkt-button mkt-button--ghost" type="button" onClick={() => importInput.current?.click()}>설정 불러오기</button>
             <button className="mkt-button mkt-button--ghost" type="button" onClick={() => downloadTemplateJson(template)}>설정 JSON</button>
-            <button className="mkt-button mkt-button--secondary" type="button" disabled={errors.length > 0 || !qrDataUrl || !priceApproved} onClick={() => runExport("png")}>PNG 2장</button>
-            <button className="mkt-button mkt-button--ghost" type="button" disabled={errors.length > 0 || !qrDataUrl || !priceApproved} onClick={() => window.print()}>양면 인쇄</button>
-            <button className="mkt-button mkt-button--primary" type="button" disabled={errors.length > 0 || !qrDataUrl || !priceApproved} onClick={() => runExport("pdf")}>양면 PDF</button>
+            <button className="mkt-button mkt-button--secondary" type="button" disabled={exporting || errors.length > 0 || !qrDataUrl || !priceApproved} onClick={() => runExport("png")}>PNG 2장</button>
+            <button className="mkt-button mkt-button--ghost" type="button" disabled={exporting || errors.length > 0 || !qrDataUrl || !priceApproved} onClick={() => window.print()}>양면 인쇄</button>
+            <button className="mkt-button mkt-button--primary" type="button" disabled={exporting || errors.length > 0 || !qrDataUrl || !priceApproved} onClick={() => runExport("pdf")}>양면 PDF</button>
             <input ref={importInput} type="file" accept="application/json,.json" hidden onChange={importTemplateJson} />
           </div>
         </div>

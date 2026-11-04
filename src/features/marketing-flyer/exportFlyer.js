@@ -1,3 +1,5 @@
+import { prepareExportImages } from './exportImages.js';
+
 async function waitForPageAssets(page) {
   if (document.fonts?.ready) {
     await document.fonts.ready;
@@ -13,13 +15,14 @@ async function waitForPageAssets(page) {
   );
 }
 
-async function renderPage(page) {
+async function renderPage(page, imageData) {
   const { default: html2canvas } = await import("html2canvas");
   await waitForPageAssets(page);
   return html2canvas(page, {
     backgroundColor: "#fffaf2",
     scale: 3,
-    useCORS: true,
+    // 캡처 중 외부 서버를 다시 호출하지 않고 준비한 data URL을 사용한다.
+    useCORS: false,
     allowTaint: false,
     logging: false,
     imageTimeout: 15000,
@@ -27,7 +30,7 @@ async function renderPage(page) {
     height: 1123,
     scrollX: 0,
     scrollY: 0,
-    onclone: (_clonedDocument, clonedPage) => {
+    onclone: async (_clonedDocument, clonedPage) => {
       // Mobile preview scales the live page. Export the unscaled A4 canvas instead.
       Object.assign(clonedPage.style, {
         width: "794px",
@@ -40,8 +43,35 @@ async function renderPage(page) {
         overflow: "hidden",
         boxShadow: "none",
       });
+      const originals = [...page.querySelectorAll('img')];
+      const clones = [...clonedPage.querySelectorAll('img')];
+      await Promise.all(clones.map(async (image, index) => {
+        const original = originals[index];
+        const source = original?.currentSrc || original?.getAttribute('src');
+        const dataUrl = imageData.get(source);
+        if (!dataUrl) return;
+        image.removeAttribute('srcset');
+        image.removeAttribute('crossorigin');
+        image.loading = 'eager';
+        image.src = dataUrl;
+        // 미리보기에서 일시적으로 로딩 실패했던 사진도 성공한 데이터를 다시 표시한다.
+        image.style.removeProperty('display');
+        image.classList.remove('mkt-media__image--failed');
+        if (image.decode) {
+          try { await image.decode(); }
+          catch { throw new Error(`${original.alt || '상품'} 사진을 저장용으로 변환하지 못했습니다.`); }
+        }
+      }));
     },
   });
+}
+
+async function prepareDocumentImages(pages) {
+  const images = pages.flatMap(page => [...page.querySelectorAll('img')].map(image => ({
+    src: image.currentSrc || image.getAttribute('src'),
+    name: image.alt || '상품 사진',
+  })));
+  return prepareExportImages(images);
 }
 
 function getExportPages(root) {
@@ -61,11 +91,12 @@ function safeFilename(value, extension) {
 
 export async function exportDuplexPdf(root, filename) {
   const pages = getExportPages(root);
+  const imageData = await prepareDocumentImages(pages);
   const { jsPDF } = await import("jspdf");
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
 
   for (const [index, page] of pages.entries()) {
-    const canvas = await renderPage(page);
+    const canvas = await renderPage(page, imageData);
     if (index > 0) pdf.addPage("a4", "portrait");
     pdf.addImage(canvas.toDataURL("image/jpeg", 0.94), "JPEG", 0, 0, 210, 297, undefined, "FAST");
     // 캡처 이미지 위에도 웹 주문 안내 링크를 눌러 열 수 있도록 PDF 링크를 보존한다.
@@ -87,8 +118,10 @@ export async function exportDuplexPdf(root, filename) {
 
 export async function exportDuplexPng(root, filename) {
   const pages = getExportPages(root);
-  for (const [index, page] of pages.entries()) {
-    const canvas = await renderPage(page);
+  const imageData = await prepareDocumentImages(pages);
+  const canvases = [];
+  for (const page of pages) canvases.push(await renderPage(page, imageData));
+  for (const [index, canvas] of canvases.entries()) {
     const anchor = document.createElement("a");
     anchor.download = safeFilename(`${filename || "지구농산_양면_홍보전단"}_${index + 1}면`, "png");
     anchor.href = canvas.toDataURL("image/png");
