@@ -1821,7 +1821,7 @@
   }
 }
 
-@media screen and (max-width: 1180px) {
+@media screen and (max-width: 1180px) and (pointer: coarse) {
   .mkt-workspace {
     display: block;
   }
@@ -1849,7 +1849,7 @@
   }
 }
 
-@media screen and (max-width: 560px) {
+@media screen and (max-width: 560px) and (pointer: coarse) {
   .mkt-editor {
     padding-right: 16px;
     padding-left: 16px;

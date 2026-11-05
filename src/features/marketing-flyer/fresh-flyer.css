@@ -84,3 +84,13 @@
 .order-guide-receipt b{font-weight:700}
 .order-guide-receipt .order-guide-delivery-date{margin-top:3px;border:1px solid #99c8b1;border-radius:3px;background:#e6f4e9;color:#075639;font-size:8px;line-height:16px;padding:0 3px}
 .order-guide-delivery-date b{font-weight:900}
+
+/* 데스크톱 확대 시에도 편집기와 전단을 좌우로 유지한다. 부족한 폭은 스크롤한다. */
+@media screen and (pointer: fine){
+  .mkt-workspace{display:grid;min-width:1160px;grid-template-columns:320px minmax(840px,1fr)}
+  .mkt-editor{position:sticky;top:0;width:auto;height:100vh;max-height:100vh;border-right:1px solid #d4c7b5;border-bottom:0;overflow-y:auto}
+  .mkt-preview-shell{min-width:0;padding:22px;overflow-x:auto}
+  .mkt-toolbar{position:sticky;top:14px;flex-direction:row;align-items:center}
+  .mkt-preview .fresh-document{display:flex;min-width:794px;align-items:center;overflow:visible;padding:24px 0}
+  .mkt-preview .fresh-page{transform:none;margin:0;flex-shrink:0}
+}
