@@ -1,4 +1,5 @@
 import { ORDER_SITE_URL } from './OrderPhotoGuide.jsx';
+import { readPromoDraft, savePromoDraft } from './draftStorage.js';
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MarketingFlyerDocument } from "./MarketingFlyerDocument.jsx";
@@ -27,6 +28,11 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
   const updateTemplate = (nextTemplate) => {
     setTemplate(nextTemplate);
     setPriceApproved(false);
+    // 변경 즉시 저장해 탭을 곧바로 닫아도 마지막 선택이 남도록 한다.
+    if (draftLoaded) {
+      try { savePromoDraft(localStorage, nextTemplate); }
+      catch { setStatus('이 브라우저에 자동 저장하지 못했습니다. 설정 파일로 저장해 주세요.'); }
+    }
   };
 
   useEffect(() => {
@@ -41,14 +47,14 @@ export function MarketingFlyerWorkspace({ initialProducts = [], initialOverrides
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('jigu-promo-reference-eight-v3');
-      if (saved) setTemplate(buildTemplateFromCatalog(catalog, JSON.parse(saved)));
+      const saved = readPromoDraft(localStorage);
+      if (saved) setTemplate(buildTemplateFromCatalog(catalog, saved));
     } catch { setStatus('저장된 작업을 불러오지 못했습니다.'); }
     setDraftLoaded(true);
   }, [catalog]);
   useEffect(() => {
     if (!draftLoaded) return;
-    try { localStorage.setItem('jigu-promo-duplex-v2', JSON.stringify(template)); }
+    try { savePromoDraft(localStorage, template); }
     catch { setStatus('이 브라우저에 자동 저장하지 못했습니다. 설정 파일로 저장해 주세요.'); }
   }, [template, draftLoaded]);
 
