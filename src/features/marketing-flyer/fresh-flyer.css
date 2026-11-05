@@ -65,3 +65,22 @@
 .fresh-order .order-photo-guide-heading{display:flex}.fresh-back .fresh-back-title h1{font-size:30px;line-height:1.2}.fresh-back .fresh-back-title h1 br{display:none}.fresh-back .fresh-back-title h1 em{margin-left:8px}
 .fresh-back .fresh-categories p{-webkit-line-clamp:1}
 .fresh-back .fresh-back-title{margin-top:12px;margin-bottom:8px}
+
+/* 네 화면의 초록색 버튼을 공통 행에 배치해 한 줄로 정렬한다. */
+.order-guide-screen{height:180px;min-height:180px;display:grid;grid-template-rows:20px minmax(0,1fr) 20px 11px;gap:4px;padding:7px 8px 8px}
+.order-guide-screen-top{margin:0;padding-bottom:4px}
+.order-guide-screen-body{min-width:0;min-height:0}
+.order-guide-example-button{margin:0;height:20px;padding:0 2px;line-height:20px;white-space:nowrap;font-size:9px}
+.order-guide-example-label{margin:0;padding-top:2px;line-height:9px}
+.order-guide-screen-body--2 .order-guide-screen-heading{margin:0 0 2px}
+.order-guide-cart-date{font-size:7px;font-weight:800;color:#075639;background:#edf6ed;padding:3px 4px;border-radius:3px}
+.order-guide-screen-body--2 .order-guide-cart-item{padding:2px 0}
+.order-guide-screen-body--2 .order-guide-cart-item img{height:24px;width:24px}
+.order-guide-screen-body--3{text-align:center}
+.order-guide-screen-body--3 .order-guide-confirm-icon{width:22px;line-height:22px;font-size:16px;margin:0 auto 3px}
+.order-guide-screen-body--3 .order-guide-screen-heading{font-size:10px;margin:0 0 4px;white-space:nowrap}
+.order-guide-receipt{background:#f5f7f5;padding:4px;border-radius:4px;text-align:left}
+.order-guide-receipt>div{display:flex;justify-content:space-between;gap:3px;font-size:7px;line-height:12px}
+.order-guide-receipt b{font-weight:700}
+.order-guide-receipt .order-guide-delivery-date{margin-top:3px;border:1px solid #99c8b1;border-radius:3px;background:#e6f4e9;color:#075639;font-size:8px;line-height:16px;padding:0 3px}
+.order-guide-delivery-date b{font-weight:900}
